@@ -305,15 +305,18 @@ private:
 class GluthBossHelper : public AiObject
 {
 public:
-    const std::pair<float, float> mainTankPos25 = {3331.48f, -3109.06f};
-    const std::pair<float, float> mainTankPos10 = {3278.29f, -3162.06f};
+    /*const std::pair<float, float> mainTankPos25 = {3331.48f, -3109.06f};
+    const std::pair<float, float> mainTankPos10 = {3278.29f, -3162.06f};*/
+    const std::pair<float, float> mainTankPos25 = {3283.09f, -3156.96f};
+    const std::pair<float, float> mainTankPos10 = {3283.09f, -3156.96f};
     const std::pair<float, float> beforeDecimatePos = {3267.34f, -3175.68f};
     const std::pair<float, float> leftSlowDownPos = {3290.68f, -3141.65f};
     const std::pair<float, float> rightSlowDownPos = {3300.78f, -3151.98f};
     const std::pair<float, float> rangedPos = {3301.45f, -3139.29f};
     const std::pair<float, float> healPos = {3303.09f, -3135.24f};
 
-    const float decimatedZombiePct = 10.0f;
+    const float decimatedZombiePctUpper = 8.0f;
+    const float decimatedZombiePctLower = 1.0f;
     GluthBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
     bool UpdateBossAI()
     {
@@ -376,6 +379,19 @@ public:
     }
     bool JustStartCombat() const { return _combat_start_ms != 0 && getMSTime() - _combat_start_ms < 10000; }
     bool IsZombieChow(Unit* unit) const { return unit && botAI->EqualLowercaseName(unit->GetName(), "zombie chow"); }
+    bool IsZombieDecimated(Unit* unit) const
+    {
+        if (!unit || !unit->IsAlive())
+        {
+            return false;
+        }
+        float healthPct = unit->GetHealthPct();
+        return healthPct <= decimatedZombiePctUpper && healthPct >= decimatedZombiePctLower;
+    }
+    bool IsZombieHealthy(Unit* unit) const
+    {
+        return unit && unit->IsAlive() && unit->GetHealthPct() > decimatedZombiePctUpper;
+    }
 
 private:
     void Reset()

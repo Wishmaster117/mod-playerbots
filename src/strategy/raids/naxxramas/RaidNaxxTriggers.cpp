@@ -152,11 +152,63 @@ bool GluthMainTankMortalWoundTrigger::IsActive()
         // Fallback to name for custom spell data.
         aura = botAI->GetAura("mortal wound", mt, false, true);
     }
-    if (!aura || aura->GetStackAmount() < 5)
+    if (!aura || aura->GetStackAmount() < 4)
     {
         return false;
     }
     return true;
+}
+
+bool GluthMisdirectionStartTrigger::IsActive()
+{
+    if (!helper.UpdateBossAI())
+    {
+        return false;
+    }
+    if (bot->getClass() != CLASS_HUNTER)
+    {
+        return false;
+    }
+    if (!helper.JustStartCombat())
+    {
+        return false;
+    }
+    return AI_VALUE(Unit*, "main tank") != nullptr;
+}
+
+bool GluthTricksStartTrigger::IsActive()
+{
+    if (!helper.UpdateBossAI())
+    {
+        return false;
+    }
+    if (bot->getClass() != CLASS_ROGUE)
+    {
+        return false;
+    }
+    if (!helper.JustStartCombat())
+    {
+        return false;
+    }
+    return AI_VALUE(Unit*, "main tank") != nullptr;
+}
+
+bool GluthEnrageTrigger::IsActive()
+{
+    if (!helper.UpdateBossAI())
+    {
+        return false;
+    }
+    if (bot->getClass() != CLASS_HUNTER)
+    {
+        return false;
+    }
+    Unit* boss = AI_VALUE2(Unit*, "find target", "gluth");
+    if (!boss)
+    {
+        return false;
+    }
+    return NaxxSpellIds::GetAnyAura(boss, {NaxxSpellIds::Enrage}) != nullptr;
 }
 
 bool KelthuzadTrigger::IsActive() { return helper.UpdateBossAI(); }

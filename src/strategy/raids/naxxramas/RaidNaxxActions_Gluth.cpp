@@ -1,5 +1,7 @@
 #include "RaidNaxxActions.h"
 
+#include <cfloat>
+
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 #include "SharedDefines.h"
@@ -40,7 +42,7 @@ bool GluthChooseTargetAction::Execute(Event event)
     {
         for (Unit* t : target_zombies)
         {
-            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() != bot && t->GetDistance2d(bot) <= 10.0f)
+            if (helper.IsZombieHealthy(t) && t->GetVictim() != bot && t->GetDistance2d(bot) <= 10.0f)
             {
                 if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
                 {
@@ -54,7 +56,7 @@ bool GluthChooseTargetAction::Execute(Event event)
         // prevent zombie go straight to gluth
         for (Unit* t : target_zombies)
         {
-            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() == target_boss &&
+            if (helper.IsZombieHealthy(t) && t->GetVictim() == target_boss &&
                 t->GetDistance2d(bot) <= sPlayerbotAIConfig->spellDistance)
             {
                 if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
@@ -70,13 +72,16 @@ bool GluthChooseTargetAction::Execute(Event event)
     }
     else
     {
+        bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+        float tankPosX = raid25 ? helper.mainTankPos25.first : helper.mainTankPos10.first;
+        float tankPosY = raid25 ? helper.mainTankPos25.second : helper.mainTankPos10.second;
+
         for (Unit* t : target_zombies)
         {
-            if (t->GetHealthPct() <= helper.decimatedZombiePct)
+            if (helper.IsZombieDecimated(t))
             {
                 if (target == nullptr ||
-                    target->GetDistance2d(helper.mainTankPos25.first, helper.mainTankPos25.second) >
-                        t->GetDistance2d(helper.mainTankPos25.first, helper.mainTankPos25.second))
+                    target->GetDistance2d(tankPosX, tankPosY) > t->GetDistance2d(tankPosX, tankPosY))
                 {
                     target = t;
                 }
@@ -185,19 +190,60 @@ bool GluthSlowdownAction::Execute(Event event)
     {
         return false;
     }
-    bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
-    if (!raid25)
-    {
-        return false;
-    }
     if (helper.JustStartCombat())
     {
         return false;
     }
+    GuidVector attackers = context->GetValue<GuidVector>("possible targets")->Get();
+    Unit* nearestZombie = nullptr;
+    float nearestDistance = FLT_MAX;
+
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
+        {
+            continue;
+        }
+        if (!helper.IsZombieChow(unit))
+        {
+            continue;
+        }
+        float distance = bot->GetDistance2d(unit);
+        if (distance < nearestDistance)
+        {
+            nearestDistance = distance;
+            nearestZombie = unit;
+        }
+    }
+    if (!nearestZombie)
+    {
+        return false;
+    }
+
     switch (bot->getClass())
     {
         case CLASS_HUNTER:
             return botAI->CastSpell("frost trap", bot);
+            break;
+        case CLASS_MAGE:
+            if (nearestDistance <= 12.0f)
+            {
+                return botAI->CastSpell("frost nova", bot);
+            }
+            break;
+        case CLASS_SHAMAN:
+            return botAI->CastSpell("earthbind totem", bot);
+            break;
+        case CLASS_PALADIN:
+            if (nearestDistance <= 12.0f)
+            {
+                if (botAI->CastSpell("consecration", bot))
+                {
+                    return true;
+                }
+                return botAI->CastSpell("holy wrath", nearestZombie);
+            }
             break;
         default:
             break;

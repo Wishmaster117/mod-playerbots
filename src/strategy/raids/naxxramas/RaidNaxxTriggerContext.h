@@ -45,6 +45,9 @@ public:
 
         creators["gluth"] = &RaidNaxxTriggerContext::gluth;
         creators["gluth main tank mortal wound"] = &RaidNaxxTriggerContext::gluth_main_tank_mortal_wound;
+        creators["gluth misdirection start"] = &RaidNaxxTriggerContext::gluth_misdirection_start;
+        creators["gluth tricks start"] = &RaidNaxxTriggerContext::gluth_tricks_start;
+        creators["gluth enrage"] = &RaidNaxxTriggerContext::gluth_enrage;
 
         creators["loatheb"] = &RaidNaxxTriggerContext::loatheb;
     }
@@ -76,6 +79,9 @@ private:
     static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
     static Trigger* gluth(PlayerbotAI* ai) { return new GluthTrigger(ai); }
     static Trigger* gluth_main_tank_mortal_wound(PlayerbotAI* ai) { return new GluthMainTankMortalWoundTrigger(ai); }
+    static Trigger* gluth_misdirection_start(PlayerbotAI* ai) { return new GluthMisdirectionStartTrigger(ai); }
+    static Trigger* gluth_tricks_start(PlayerbotAI* ai) { return new GluthTricksStartTrigger(ai); }
+    static Trigger* gluth_enrage(PlayerbotAI* ai) { return new GluthEnrageTrigger(ai); }
     static Trigger* loatheb(PlayerbotAI* ai) { return new LoathebTrigger(ai); }
 };
 

@@ -224,6 +224,36 @@ private:
     GluthBossHelper helper;
 };
 
+class GluthMisdirectionStartTrigger : public Trigger
+{
+public:
+    GluthMisdirectionStartTrigger(PlayerbotAI* ai) : Trigger(ai, "gluth misdirection start"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    GluthBossHelper helper;
+};
+
+class GluthTricksStartTrigger : public Trigger
+{
+public:
+    GluthTricksStartTrigger(PlayerbotAI* ai) : Trigger(ai, "gluth tricks start"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    GluthBossHelper helper;
+};
+
+class GluthEnrageTrigger : public Trigger
+{
+public:
+    GluthEnrageTrigger(PlayerbotAI* ai) : Trigger(ai, "gluth enrage"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    GluthBossHelper helper;
+};
+
 class LoathebTrigger : public Trigger
 {
 public:

@@ -73,11 +73,14 @@ namespace NaxxSpellIds
     SPELL_SAPPHIRON_DIES            = 29357
 */
     // Gluth
+	// To 25 MAN if static constexpr uint32 MortalWound25 = 54378; not workks will change to 25646
     static constexpr uint32 Decimate10 = 28374;
-    static constexpr uint32 Decimate25 = 54426;
+    static constexpr uint32 Decimate25 = 28374;
     static constexpr uint32 Decimate25Alt = 28375;
     static constexpr uint32 MortalWound10 = 25646;
     static constexpr uint32 MortalWound25 = 54378;
+    static constexpr uint32 Enrage = 28371;
+    static constexpr uint32 InfectedWound = 29306;
 /*
     SPELL_MORTAL_WOUND                  = 25646,
     SPELL_ENRAGE                        = 28371,

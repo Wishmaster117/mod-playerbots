@@ -99,7 +99,16 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(new TriggerNode("gluth main tank mortal wound",
                                        NextAction::array(0, new NextAction("taunt spell", ACTION_RAID + 1), nullptr)));
 
-    // Loatheb
+    triggers.push_back(new TriggerNode("gluth misdirection start",
+                                       NextAction::array(0, new NextAction("misdirection on main tank", ACTION_RAID + 2),
+                                                        nullptr)));
+    triggers.push_back(new TriggerNode("gluth tricks start",
+                                       NextAction::array(0, new NextAction("tricks of the trade on main tank", ACTION_RAID + 2),
+                                                        nullptr)));
+    triggers.push_back(new TriggerNode(
+        "gluth enrage", NextAction::array(0, new NextAction("tranquilizing shot", ACTION_RAID + 3), nullptr)));
+
+	// Loatheb
     triggers.push_back(new TriggerNode(
         "loatheb", NextAction::array(0, new NextAction("loatheb position", ACTION_RAID + 1),
                                      new NextAction("loatheb choose target", ACTION_RAID + 1), nullptr)));

@@ -319,8 +319,12 @@ float GluthGenericMultiplier::GetValue(Action* action)
             // Fallback to name for custom spell data.
             aura = botAI->GetAura("mortal wound", bot, false, true);
         }
-        if (aura && aura->GetStackAmount() >= 5)
+        if (aura && aura->GetStackAmount() >= 4)
         {
+            if (dynamic_cast<AttackAction*>(action))
+            {
+                return 0.0f;
+            }
             if (dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
                 dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action))
             {
