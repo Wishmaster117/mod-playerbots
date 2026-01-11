@@ -87,6 +87,21 @@ public:
     bool isUseful() override;
 };
 
+class CastRitualOfSoulsAction : public CastSpellAction
+{
+public:
+    CastRitualOfSoulsAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "ritual of souls") {}
+    bool isUseful() override;
+};
+
+class EnableSoulstoneDungeonAction : public Action
+{
+public:
+    EnableSoulstoneDungeonAction(PlayerbotAI* botAI) : Action(botAI, "enable soulstone dungeon") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 class UseSoulstoneSelfAction : public UseSpellItemAction
 {
 public:

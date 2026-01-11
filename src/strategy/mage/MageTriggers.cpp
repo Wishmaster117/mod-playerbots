@@ -8,6 +8,7 @@
 #include "Playerbots.h"
 #include "Player.h"
 #include "Spell.h"
+#include "RitualActions.h"
 #include "DynamicObject.h"
 #include "Value.h"
 #include "SpellAuraEffects.h"
@@ -180,4 +181,9 @@ bool BlizzardChannelCheckTrigger::IsActive()
 
     // Not channeling Blizzard
     return false;
+}
+
+bool RitualOfRefreshmentTrigger::IsActive()
+{
+    return ShouldCastRitualOfRefreshment(botAI);
 }

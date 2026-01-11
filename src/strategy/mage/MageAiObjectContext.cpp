@@ -124,6 +124,7 @@ public:
         creators["no firestarter strategy"] = &MageTriggerFactoryInternal::no_firestarter_strategy;
         creators["enemy is close and no firestarter strategy"] = &MageTriggerFactoryInternal::enemy_is_close_and_no_firestarter_strategy;
         creators["enemy too close for spell and no firestarter strategy"] = &MageTriggerFactoryInternal::enemy_too_close_for_spell_and_no_firestarter_strategy;
+        creators["ritual of refreshment"] = &MageTriggerFactoryInternal::ritual_of_refreshment;
     }
 
 private:
@@ -173,6 +174,7 @@ private:
     static Trigger* no_firestarter_strategy(PlayerbotAI* botAI) { return new NoFirestarterStrategyTrigger(botAI); }
     static Trigger* enemy_is_close_and_no_firestarter_strategy(PlayerbotAI* botAI) { return new EnemyIsCloseAndNoFirestarterStrategyTrigger(botAI); }
     static Trigger* enemy_too_close_for_spell_and_no_firestarter_strategy(PlayerbotAI* botAI) { return new EnemyTooCloseForSpellAndNoFirestarterStrategyTrigger(botAI); }
+    static Trigger* ritual_of_refreshment(PlayerbotAI* botAI) { return new RitualOfRefreshmentTrigger(botAI); }
 };
 
 class MageAiObjectContextInternal : public NamedObjectContext<Action>
@@ -238,6 +240,7 @@ public:
         creators["use mana jade"] = &MageAiObjectContextInternal::use_mana_jade;
         creators["use mana agate"] = &MageAiObjectContextInternal::use_mana_agate;
         creators["mana shield"] = &MageAiObjectContextInternal::mana_shield;
+        creators["ritual of refreshment"] = &MageAiObjectContextInternal::ritual_of_refreshment;
     }
 
 private:
@@ -299,6 +302,7 @@ private:
     static Action* use_mana_jade(PlayerbotAI* botAI) { return new UseManaJadeAction(botAI); }
     static Action* use_mana_agate(PlayerbotAI* botAI) { return new UseManaAgateAction(botAI); }
     static Action* mana_shield(PlayerbotAI* botAI) { return new CastManaShieldAction(botAI); }
+    static Action* ritual_of_refreshment(PlayerbotAI* botAI) { return new CastRitualOfRefreshmentAction(botAI); }
 };
 
 SharedNamedObjectContextList<Strategy> MageAiObjectContext::sharedStrategyContexts;

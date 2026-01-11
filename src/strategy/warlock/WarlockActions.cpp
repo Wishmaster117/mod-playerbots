@@ -9,10 +9,12 @@
 #include <vector>
 #include "Event.h"
 #include "Item.h"
+#include "Map.h"
 #include "ObjectGuid.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
+#include "RitualActions.h"
 #include "ServerFacade.h"
 #include "Unit.h"
 #include "Timer.h"
@@ -188,6 +190,14 @@ bool CastCreateSoulstoneAction::isUseful()
     return hasSpace;
 }
 
+bool CastRitualOfSoulsAction::isUseful()
+{
+    if (!CastSpellAction::isUseful())
+        return false;
+
+    return ShouldCastRitualOfSouls(botAI);
+}
+
 bool DestroySoulShardAction::Execute(Event event)
 {
     // Look for the first soul shard in any bag and destroy it
@@ -221,6 +231,27 @@ bool DestroySoulShardAction::Execute(Event event)
         }
     }
     return false;
+}
+
+bool EnableSoulstoneDungeonAction::isUseful()
+{
+    if (!bot)
+        return false;
+
+    if (bot->getClass() != CLASS_WARLOCK)
+        return false;
+
+    Map* map = bot->GetMap();
+    if (!map || (!map->IsDungeon() && !map->IsRaid()))
+        return false;
+
+    return !botAI->HasStrategy("ss healer", BOT_STATE_NON_COMBAT);
+}
+
+bool EnableSoulstoneDungeonAction::Execute(Event event)
+{
+    botAI->ChangeStrategy("+ss healer", BOT_STATE_NON_COMBAT);
+    return true;
 }
 
 // Checks if the target has a soulstone aura

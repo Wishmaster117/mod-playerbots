@@ -65,6 +65,7 @@
 #include "NewRpgAction.h"
 #include "FishingAction.h"
 #include "CancelChannelAction.h"
+#include "RitualActions.h"
 
 class PlayerbotAI;
 
@@ -198,6 +199,11 @@ public:
         creators["remove bobber strategy"] = &ActionContext::remove_bobber_strategy;
         creators["roll"] = &ActionContext::roll_action;
         creators["cancel channel"] = &ActionContext::cancel_channel;
+        creators["interact with soul portal"] = &ActionContext::interact_with_soul_portal;
+        creators["interact with refreshment portal"] = &ActionContext::interact_with_refreshment_portal;
+        creators["interact with refreshment table"] = &ActionContext::interact_with_refreshment_table;
+        creators["interact with soulwell"] = &ActionContext::interact_with_soulwell;
+        creators["check conjured items"] = &ActionContext::check_conjured_items;
 
         // BG Tactics
         creators["bg tactics"] = &ActionContext::bg_tactics;
@@ -454,6 +460,12 @@ private:
     static Action* new_rpg_wander_npc(PlayerbotAI* ai) { return new NewRpgWanderNpcAction(ai); }
     static Action* new_rpg_do_quest(PlayerbotAI* ai) { return new NewRpgDoQuestAction(ai); }
     static Action* new_rpg_travel_flight(PlayerbotAI* ai) { return new NewRpgTravelFlightAction(ai); }
+	
+    static Action* interact_with_soul_portal(PlayerbotAI* botAI) { return new InteractWithSoulPortalAction(botAI); }
+    static Action* interact_with_refreshment_portal(PlayerbotAI* botAI) { return new InteractWithRefreshmentPortalAction(botAI); }
+    static Action* interact_with_refreshment_table(PlayerbotAI* botAI) { return new InteractWithRefreshmentTableAction(botAI); }
+    static Action* interact_with_soulwell(PlayerbotAI* botAI) { return new InteractWithSoulwellAction(botAI); }
+    static Action* check_conjured_items(PlayerbotAI* botAI) { return new CheckConjuredItemsAction(botAI); }
 };
 
 #endif

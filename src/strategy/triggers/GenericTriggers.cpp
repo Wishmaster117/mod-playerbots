@@ -12,6 +12,7 @@
 #include "GameTime.h"
 #include "ItemVisitors.h"
 #include "LastSpellCastValue.h"
+#include "Map.h"
 #include "ObjectGuid.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
@@ -729,4 +730,16 @@ bool NewPetTrigger::IsActive()
 
     // Otherwise, do not activate
     return false;
+}
+
+bool InDungeonTrigger::IsActive()
+{
+    if (!bot || !botAI)
+        return false;
+
+    Map* map = bot->GetMap();
+    if (!map)
+        return false;
+
+    return (map->IsDungeon() || map->IsRaid()) && bot->GetGroup();
 }

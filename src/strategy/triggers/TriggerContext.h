@@ -13,6 +13,7 @@
 #include "LfgTriggers.h"
 #include "LootTriggers.h"
 #include "NamedObjectContext.h"
+#include "RitualActions.h"
 #include "NewRpgStrategy.h"
 #include "NewRpgTriggers.h"
 #include "PvpTriggers.h"
@@ -229,6 +230,12 @@ public:
         creators["can fish"] = &TriggerContext::can_fish;
         creators["can use fishing bobber"] = &TriggerContext::can_use_fishing_bobber;
         creators["new pet"] = &TriggerContext::new_pet;
+        creators["in dungeon"] = &TriggerContext::in_dungeon;
+        creators["soul portal available"] = &TriggerContext::soul_portal_available;
+        creators["soulwell available"] = &TriggerContext::soulwell_available;
+        creators["refreshment portal available"] = &TriggerContext::refreshment_portal_available;
+        creators["refreshment table available"] = &TriggerContext::refreshment_table_available;
+        creators["needs conjured items"] = &TriggerContext::needs_conjured_items;
     }
 
 private:
@@ -257,6 +264,12 @@ private:
     {
         return new AoeHealTrigger(botAI, "medium aoe heal", "medium", 2);
     }
+    static Trigger* in_dungeon(PlayerbotAI* botAI) { return new InDungeonTrigger(botAI); }
+    static Trigger* soul_portal_available(PlayerbotAI* botAI) { return new SoulPortalAvailableTrigger(botAI); }
+    static Trigger* soulwell_available(PlayerbotAI* botAI) { return new SoulwellAvailableTrigger(botAI); }
+    static Trigger* refreshment_portal_available(PlayerbotAI* botAI) { return new RefreshmentPortalAvailableTrigger(botAI); }
+    static Trigger* refreshment_table_available(PlayerbotAI* botAI) { return new RefreshmentTableAvailableTrigger(botAI); }
+    static Trigger* needs_conjured_items(PlayerbotAI* botAI) { return new NeedsConjuredItemsTrigger(botAI); }
     static Trigger* almost_full_aoe_heal(PlayerbotAI* botAI)
     {
         return new AoeHealTrigger(botAI, "almost full aoe heal", "almost full", 2);

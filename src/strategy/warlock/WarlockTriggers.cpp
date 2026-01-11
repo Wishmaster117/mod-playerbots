@@ -8,6 +8,7 @@
 #include "Playerbots.h"
 #include "PlayerbotAI.h"
 #include "Player.h"
+#include "RitualActions.h"
 
 static const uint32 SOUL_SHARD_ITEM_ID = 6265;
 
@@ -262,4 +263,9 @@ bool RainOfFireChannelCheckTrigger::IsActive()
 
     // Not channeling Rain of Fire
     return false;
+}
+
+bool RitualOfSoulsTrigger::IsActive()
+{
+    return ShouldCastRitualOfSouls(botAI);
 }

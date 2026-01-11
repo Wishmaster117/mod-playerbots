@@ -8,6 +8,7 @@
 #include "UseItemAction.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+#include "RitualActions.h"
 #include "ServerFacade.h"
 #include "SharedDefines.h"
 
@@ -141,4 +142,12 @@ bool CastBlinkBackAction::Execute(Event event)
     // can cast spell check passed in isUseful()
     bot->SetOrientation(bot->GetAngle(target) + M_PI);
     return CastSpellAction::Execute(event);
+}
+
+bool CastRitualOfRefreshmentAction::isUseful()
+{
+    if (!CastSpellAction::isUseful())
+        return false;
+
+    return ShouldCastRitualOfRefreshment(botAI);
 }

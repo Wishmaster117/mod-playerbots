@@ -62,6 +62,13 @@ public:
     bool IsActive() override;
 };
 
+class RitualOfRefreshmentTrigger : public Trigger
+{
+public:
+    RitualOfRefreshmentTrigger(PlayerbotAI* botAI) : Trigger(botAI, "ritual of refreshment") {}
+    bool IsActive() override;
+};
+
 class FireWardTrigger : public DeflectSpellTrigger
 {
 public:

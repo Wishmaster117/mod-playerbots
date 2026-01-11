@@ -89,6 +89,13 @@ public:
     }
 };
 
+class RitualOfSoulsTrigger : public Trigger
+{
+public:
+    RitualOfSoulsTrigger(PlayerbotAI* botAI) : Trigger(botAI, "ritual of souls") {}
+    bool IsActive() override;
+};
+
 class WarlockConjuredItemTrigger : public ItemCountTrigger
 {
 public:

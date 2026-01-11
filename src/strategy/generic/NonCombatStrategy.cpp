@@ -6,11 +6,17 @@
 #include "NonCombatStrategy.h"
 
 #include "Playerbots.h"
+#include "RitualActions.h"
 
 void NonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("random", { NextAction("clean quest log", 1.0f) }));
     triggers.push_back(new TriggerNode("timer", { NextAction("check mount state", 1.0f) }));
+    triggers.push_back(new TriggerNode("soul portal available", { NextAction("interact with soul portal", 8.0f) }));
+    triggers.push_back(new TriggerNode("soulwell available", { NextAction("interact with soulwell", 10.0f) }));
+    triggers.push_back(new TriggerNode("refreshment portal available", { NextAction("interact with refreshment portal", 8.0f) }));
+    triggers.push_back(new TriggerNode("refreshment table available", { NextAction("interact with refreshment table", 8.0f) }));
+    triggers.push_back(new TriggerNode("needs conjured items", { NextAction("check conjured items", 9.0f) }));
 }
 
 void CollisionStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

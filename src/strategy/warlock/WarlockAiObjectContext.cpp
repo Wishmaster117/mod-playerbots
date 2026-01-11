@@ -152,6 +152,7 @@ public:
         creators["firestone"] = &WarlockTriggerFactoryInternal::firestone;
         creators["spellstone"] = &WarlockTriggerFactoryInternal::spellstone;
         creators["soulstone"] = &WarlockTriggerFactoryInternal::soulstone;
+        creators["ritual of souls"] = &WarlockTriggerFactoryInternal::ritual_of_souls;
         creators["banish"] = &WarlockTriggerFactoryInternal::banish;
         creators["fear"] = &WarlockTriggerFactoryInternal::fear;
         creators["spell lock"] = &WarlockTriggerFactoryInternal::spell_lock;
@@ -198,6 +199,7 @@ private:
     static Trigger* firestone(PlayerbotAI* botAI) { return new FirestoneTrigger(botAI); }
     static Trigger* spellstone(PlayerbotAI* botAI) { return new SpellstoneTrigger(botAI); }
     static Trigger* soulstone(PlayerbotAI* botAI) { return new SoulstoneTrigger(botAI); }
+    static Trigger* ritual_of_souls(PlayerbotAI* botAI) { return new RitualOfSoulsTrigger(botAI); }
     static Trigger* corruption(PlayerbotAI* botAI) { return new CorruptionTrigger(botAI); }
     static Trigger* corruption_on_attacker(PlayerbotAI* botAI) { return new CorruptionOnAttackerTrigger(botAI); }
     static Trigger* banish(PlayerbotAI* botAI) { return new BanishTrigger(botAI); }
@@ -252,6 +254,8 @@ public:
         creators["soulstone master"] = &WarlockAiObjectContextInternal::soulstone_master;
         creators["soulstone tank"] = &WarlockAiObjectContextInternal::soulstone_tank;
         creators["soulstone healer"] = &WarlockAiObjectContextInternal::soulstone_healer;
+        creators["ritual of souls"] = &WarlockAiObjectContextInternal::ritual_of_souls;
+        creators["enable soulstone dungeon"] = &WarlockAiObjectContextInternal::enable_soulstone_dungeon;
         creators["summon voidwalker"] = &WarlockAiObjectContextInternal::summon_voidwalker;
         creators["summon felguard"] = &WarlockAiObjectContextInternal::summon_felguard;
         creators["summon felhunter"] = &WarlockAiObjectContextInternal::summon_felhunter;
@@ -325,6 +329,8 @@ private:
     static Action* soulstone_master(PlayerbotAI* botAI) { return new UseSoulstoneMasterAction(botAI); }
     static Action* soulstone_tank(PlayerbotAI* botAI) { return new UseSoulstoneTankAction(botAI); }
     static Action* soulstone_healer(PlayerbotAI* botAI) { return new UseSoulstoneHealerAction(botAI); }
+    static Action* ritual_of_souls(PlayerbotAI* botAI) { return new CastRitualOfSoulsAction(botAI); }
+    static Action* enable_soulstone_dungeon(PlayerbotAI* botAI) { return new EnableSoulstoneDungeonAction(botAI); }
     static Action* summon_voidwalker(PlayerbotAI* botAI) { return new CastSummonVoidwalkerAction(botAI); }
     static Action* summon_felguard(PlayerbotAI* botAI) { return new CastSummonFelguardAction(botAI); }
     static Action* summon_felhunter(PlayerbotAI* botAI) { return new CastSummonFelhunterAction(botAI); }

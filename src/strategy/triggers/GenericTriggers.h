@@ -955,4 +955,11 @@ private:
     bool triggered;
 };
 
+class InDungeonTrigger : public Trigger
+{
+public:
+    InDungeonTrigger(PlayerbotAI* botAI) : Trigger(botAI, "in dungeon") {}
+    bool IsActive() override;
+};
+
 #endif

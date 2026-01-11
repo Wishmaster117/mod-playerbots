@@ -160,6 +160,13 @@ public:
     CastConjureManaGemAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "conjure mana gem") {}
 };
 
+class CastRitualOfRefreshmentAction : public CastSpellAction
+{
+public:
+    CastRitualOfRefreshmentAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "ritual of refreshment") {}
+    bool isUseful() override;
+};
+
 class CastConjureFoodAction : public CastBuffSpellAction
 {
 public:
