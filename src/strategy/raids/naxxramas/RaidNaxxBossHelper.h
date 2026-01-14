@@ -305,15 +305,16 @@ private:
 class GluthBossHelper : public AiObject
 {
 public:
-    const std::pair<float, float> mainTankPos25 = {3331.48f, -3109.06f};
-    const std::pair<float, float> mainTankPos10 = {3278.29f, -3162.06f};
+    const std::pair<float, float> mainTankPos25 = {3325.00f, -3135.00f};
+    const std::pair<float, float> mainTankPos10 = {3320.00f, -3135.00f};
     const std::pair<float, float> beforeDecimatePos = {3267.34f, -3175.68f};
-    const std::pair<float, float> leftSlowDownPos = {3290.68f, -3141.65f};
-    const std::pair<float, float> rightSlowDownPos = {3300.78f, -3151.98f};
-    const std::pair<float, float> rangedPos = {3301.45f, -3139.29f};
-    const std::pair<float, float> healPos = {3303.09f, -3135.24f};
+    const std::pair<float, float> leftSlowDownPos = {3274.00f, -3174.00f};
+    const std::pair<float, float> rightSlowDownPos = {3282.00f, -3170.00f};
+    const std::pair<float, float> rangedPos = {3276.00f, -3172.00f};
+    const std::pair<float, float> healPos = {3280.00f, -3168.00f};
 
-    const float decimatedZombiePct = 10.0f;
+    // Decimate reduces units to 5% of max health.
+    const float decimatedZombiePct = 5.0f;
     GluthBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
     bool UpdateBossAI()
     {

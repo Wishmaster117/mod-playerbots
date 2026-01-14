@@ -18,6 +18,7 @@ public:
         creators["grobbulus go behind the boss"] = &RaidNaxxActionContext::go_behind_the_boss;
         creators["rotate grobbulus"] = &RaidNaxxActionContext::rotate_grobbulus;
         creators["grobbulus move center"] = &RaidNaxxActionContext::grobbulus_move_center;
+        creators["grobbulus move away"] = &RaidNaxxActionContext::grobbulus_move_away;
 
         creators["heigan dance melee"] = &RaidNaxxActionContext::heigan_dance_melee;
         creators["heigan dance ranged"] = &RaidNaxxActionContext::heigan_dance_ranged;
@@ -46,6 +47,8 @@ public:
         creators["gluth position"] = &RaidNaxxActionContext::gluth_position;
         creators["gluth slowdown"] = &RaidNaxxActionContext::gluth_slowdown;
 
+        creators["patchwerk ranged position"] = &RaidNaxxActionContext::patchwerk_ranged_position;
+
         creators["loatheb position"] = &RaidNaxxActionContext::loatheb_position;
         creators["loatheb choose target"] = &RaidNaxxActionContext::loatheb_choose_target;
     }
@@ -54,6 +57,7 @@ private:
     static Action* go_behind_the_boss(PlayerbotAI* ai) { return new GrobbulusGoBehindAction(ai); }
     static Action* rotate_grobbulus(PlayerbotAI* ai) { return new GrobbulusRotateAction(ai); }
     static Action* grobbulus_move_center(PlayerbotAI* ai) { return new GrobblulusMoveCenterAction(ai); }
+    static Action* grobbulus_move_away(PlayerbotAI* ai) { return new GrobbulusMoveAwayAction(ai); }
     static Action* heigan_dance_melee(PlayerbotAI* ai) { return new HeiganDanceMeleeAction(ai); }
     static Action* heigan_dance_ranged(PlayerbotAI* ai) { return new HeiganDanceRangedAction(ai); }
     static Action* thaddius_attack_nearest_pet(PlayerbotAI* ai) { return new ThaddiusAttackNearestPetAction(ai); }
@@ -83,6 +87,7 @@ private:
     static Action* gluth_choose_target(PlayerbotAI* ai) { return new GluthChooseTargetAction(ai); }
     static Action* gluth_position(PlayerbotAI* ai) { return new GluthPositionAction(ai); }
     static Action* gluth_slowdown(PlayerbotAI* ai) { return new GluthSlowdownAction(ai); }
+    static Action* patchwerk_ranged_position(PlayerbotAI* ai) { return new PatchwerkRangedPositionAction(ai); }
     static Action* loatheb_position(PlayerbotAI* ai) { return new LoathebPositionAction(ai); }
     static Action* loatheb_choose_target(PlayerbotAI* ai) { return new LoathebChooseTargetAction(ai); }
 };

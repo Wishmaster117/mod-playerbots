@@ -14,6 +14,20 @@ public:
     MutatingInjectionTrigger(PlayerbotAI* ai) : HasAuraTrigger(ai, "mutating injection", 1) {}
 };
 
+class MutatingInjectionMeleeTrigger : public MutatingInjectionTrigger
+{
+public:
+    MutatingInjectionMeleeTrigger(PlayerbotAI* ai) : MutatingInjectionTrigger(ai) {}
+    bool IsActive() override;
+};
+
+class MutatingInjectionRangedTrigger : public MutatingInjectionTrigger
+{
+public:
+    MutatingInjectionRangedTrigger(PlayerbotAI* ai) : MutatingInjectionTrigger(ai) {}
+    bool IsActive() override;
+};
+
 class AuraRemovedTrigger : public Trigger
 {
 public:
@@ -118,6 +132,13 @@ class PatchwerkNonTankTrigger : public Trigger
 {
 public:
     PatchwerkNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk non-tank") {}
+    bool IsActive() override;
+};
+
+class PatchwerkRangedTrigger : public Trigger
+{
+public:
+    PatchwerkRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk ranged") {}
     bool IsActive() override;
 };
 

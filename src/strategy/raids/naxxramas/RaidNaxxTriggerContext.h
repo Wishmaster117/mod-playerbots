@@ -15,7 +15,8 @@ class RaidNaxxTriggerContext : public NamedObjectContext<Trigger>
 public:
     RaidNaxxTriggerContext()
     {
-        creators["mutating injection"] = &RaidNaxxTriggerContext::mutating_injection;
+        creators["mutating injection melee"] = &RaidNaxxTriggerContext::mutating_injection_melee;
+        creators["mutating injection ranged"] = &RaidNaxxTriggerContext::mutating_injection_ranged;
         creators["mutating injection removed"] = &RaidNaxxTriggerContext::mutating_injection_removed;
         creators["grobbulus cloud"] = &RaidNaxxTriggerContext::grobbulus_cloud;
         creators["heigan melee"] = &RaidNaxxTriggerContext::heigan_melee;
@@ -42,6 +43,7 @@ public:
         creators["maexxna"] = &RaidNaxxTriggerContext::maexxna;
         creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
         creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
+        creators["patchwerk ranged"] = &RaidNaxxTriggerContext::patchwerk_ranged;
 
         creators["gluth"] = &RaidNaxxTriggerContext::gluth;
         creators["gluth main tank mortal wound"] = &RaidNaxxTriggerContext::gluth_main_tank_mortal_wound;
@@ -50,7 +52,8 @@ public:
     }
 
 private:
-    static Trigger* mutating_injection(PlayerbotAI* ai) { return new MutatingInjectionTrigger(ai); }
+    static Trigger* mutating_injection_melee(PlayerbotAI* ai) { return new MutatingInjectionMeleeTrigger(ai); }
+    static Trigger* mutating_injection_ranged(PlayerbotAI* ai) { return new MutatingInjectionRangedTrigger(ai); }
     static Trigger* mutating_injection_removed(PlayerbotAI* ai) { return new MutatingInjectionRemovedTrigger(ai); }
     static Trigger* grobbulus_cloud(PlayerbotAI* ai) { return new GrobbulusCloudTrigger(ai); }
     static Trigger* heigan_melee(PlayerbotAI* ai) { return new HeiganMeleeTrigger(ai); }
@@ -74,6 +77,7 @@ private:
     static Trigger* maexxna(PlayerbotAI* ai) { return new MaexxnaTrigger(ai); }
     static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
     static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
+    static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }
     static Trigger* gluth(PlayerbotAI* ai) { return new GluthTrigger(ai); }
     static Trigger* gluth_main_tank_mortal_wound(PlayerbotAI* ai) { return new GluthMainTankMortalWoundTrigger(ai); }
     static Trigger* loatheb(PlayerbotAI* ai) { return new LoathebTrigger(ai); }
