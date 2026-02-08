@@ -143,24 +143,58 @@ float ThaddiusGenericMultiplier::GetValue(Action* action)
     }
     if (dynamic_cast<CombatFormationMoveAction*>(action))
         return 0.0f;
-    // pet phase
-    if (helper.IsPhasePet() &&
-        (dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
-         dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) ||
-         dynamic_cast<ReachPartyMemberToHealAction*>(action) || dynamic_cast<BuffOnMainTankAction*>(action)))
+
+    if (helper.IsPhasePet())
     {
-        return 0.0f;
-    }
-    // die at the same time
-    Unit* target = AI_VALUE(Unit*, "current target");
-    Unit* feugen = AI_VALUE2(Unit*, "find target", "feugen");
-    Unit* stalagg = AI_VALUE2(Unit*, "find target", "stalagg");
-    if (helper.IsPhasePet() && target && feugen && stalagg && target->GetHealthPct() <= 40 &&
-        (feugen->GetHealthPct() >= target->GetHealthPct() + 3 || stalagg->GetHealthPct() >= target->GetHealthPct() + 3))
-    {
-        if (dynamic_cast<CastSpellAction*>(action) && !dynamic_cast<CastHealingSpellAction*>(action))
+        if (dynamic_cast<FollowAction*>(action))
+            return 0.0f;
+
+        if (bot->getClass() == CLASS_ROGUE && action->getName() == "sprint")
+            return 0.0f;
+
+        if (dynamic_cast<ThaddiusAttackNearestPetAction*>(action))
+            return 2.0f;
+
+        if (!botAI->IsTank(bot))
+        {
+            if (dynamic_cast<ReachSpellAction*>(action))
+                return 0.0f;
+        }
+
+        if (dynamic_cast<ReachPartyMemberToHealAction*>(action) ||
+            dynamic_cast<BuffOnMainTankAction*>(action))
         {
             return 0.0f;
+        }
+    }
+
+    Unit* target = AI_VALUE(Unit*, "current target");
+    Unit* feugen = helper.GetFeugen();
+    Unit* stalagg = helper.GetStalagg();
+    if (helper.IsPhasePet() && target && feugen && stalagg && target->IsAlive() &&
+        (target == feugen || target == stalagg) && feugen->IsAlive() && stalagg->IsAlive())
+    {
+        float targetPct = target->GetHealthPct();
+        Unit* other = (target == feugen) ? stalagg : feugen;
+        float otherPct = other->GetHealthPct();
+
+        float diff = otherPct - targetPct;
+
+        bool inSyncWindow = (targetPct <= 30.0f || otherPct <= 30.0f);
+
+        bool hardHold = (targetPct <= 12.0f && otherPct > 12.0f);
+
+        bool softHold = (targetPct <= 25.0f && diff >= 4.0f);
+
+        bool shouldHold = inSyncWindow && (hardHold || softHold);
+
+        if (shouldHold && !botAI->IsTank(bot))
+        {
+            if (dynamic_cast<MeleeAction*>(action))
+                return 0.0f;
+
+            if (dynamic_cast<CastSpellAction*>(action) && !dynamic_cast<CastHealingSpellAction*>(action))
+                return 0.0f;
         }
     }
     // magnetic pull

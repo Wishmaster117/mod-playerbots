@@ -100,11 +100,11 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // Thaddius
     triggers.push_back(new TriggerNode("thaddius phase pet",
-        { NextAction("thaddius attack nearest pet", ACTION_RAID + 1) }
+        { NextAction("thaddius attack nearest pet", ACTION_RAID + 6) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase pet lose aggro",
-        { NextAction("taunt spell", ACTION_RAID + 2) }
+        { NextAction("taunt spell", ACTION_RAID + 7) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase transition",

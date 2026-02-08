@@ -27,6 +27,17 @@
 
 const uint32 NAXX_MAP_ID = 533;
 
+inline bool NaxxHasStrategyAnyState(Player* player, char const* name)
+{
+    if (!player || !name)
+        return false;
+
+    if (PlayerbotAI* ai = GET_PLAYERBOT_AI(player))
+        return ai->HasStrategy(name, BOT_STATE_NON_COMBAT) || ai->HasStrategy(name, BOT_STATE_COMBAT);
+
+    return false;
+}
+
 template <class BossAiType>
 class GenericBossHelper : public AiObject
 {
@@ -1122,9 +1133,21 @@ public:
     const std::pair<float, float> rangedPosFeugen = {3500.45f, -2997.92f};
     const std::pair<float, float> rangedPosStalagg = {3441.01f, -2942.04f};
     const float tankPosZ = 312.61f;
+
+    // RTI indices in WotLK: 0 star, 1 circle, 2 diamond, 3 triangle, 4 moon, 5 square, 6 cross, 7 skull
+    static constexpr uint8 RAID_ICON_SQUARE = 5;
+    static constexpr uint8 RAID_ICON_CROSS = 6;
+    static constexpr uint8 RAID_ICON_SKULL = 7;
+	
+    static constexpr uint32 NPC_STALAGG = 15929;
+    static constexpr uint32 NPC_FEUGEN  = 15930;
+
     ThaddiusBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
     bool UpdateBossAI()
     {
+        // Phase-1 logic relies on stable pet pointers (Feugen/Stalagg).
+        // Keep them updated even if the boss ("thaddius") is not yet a valid target.
+
         if (!bot->IsInCombat())
         {
             Reset();
@@ -1136,14 +1159,40 @@ public:
         if (!_unit)
         {
             _unit = AI_VALUE2(Unit*, "find target", "thaddius");
-            if (!_unit)
-            {
-                return false;
-            }
         }
+
+        // Try to resolve pets by name first (normal case).
         feugen = AI_VALUE2(Unit*, "find target", "feugen");
         stalagg = AI_VALUE2(Unit*, "find target", "stalagg");
-        return true;
+
+        // Fallback: resolve pets from RTI icons (works even when "find target" is not yet available at pull).
+        auto ResolveFromIcon = [&](uint8 icon)
+        {
+            Unit* u = GetMarkedUnitRaw(icon);
+            if (!u)
+                return;
+
+            if (Creature const* c = u->ToCreature())
+            {
+                if (!feugen && c->GetEntry() == NPC_FEUGEN)
+                    feugen = u;
+                if (!stalagg && c->GetEntry() == NPC_STALAGG)
+                    stalagg = u;
+            }
+
+            // Safety fallback (should not be needed in retail data, but keeps it resilient).
+            if (!feugen && botAI->EqualLowercaseName(u->GetName(), "feugen"))
+                feugen = u;
+            if (!stalagg && botAI->EqualLowercaseName(u->GetName(), "stalagg"))
+                stalagg = u;
+        };
+
+        ResolveFromIcon(RAID_ICON_SKULL);
+        ResolveFromIcon(RAID_ICON_CROSS);
+        ResolveFromIcon(RAID_ICON_SQUARE);
+
+        // Consider the helper "available" as soon as we have the boss OR at least one pet.
+        return _unit != nullptr || feugen != nullptr || stalagg != nullptr;
     }
     bool IsPhasePet() { return (feugen && feugen->IsAlive()) || (stalagg && stalagg->IsAlive()); }
     bool IsPhaseTransition()
@@ -1155,6 +1204,22 @@ public:
         return _unit && _unit->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
     }
     bool IsPhaseThaddius() { return !IsPhasePet() && !IsPhaseTransition(); }
+
+    Unit* GetFeugen() const { return feugen; }
+    Unit* GetStalagg() const { return stalagg; }
+
+    // Determine which platform the bot is currently on during phase 1.
+    // Tanks are teleported by Magnetic Pull; non-tanks must NOT "follow" them across.
+    bool IsOnFeugenSide(Unit const* unit) const
+    {
+        if (!unit)
+            return false;
+
+        float dFeugen = unit->GetDistance2d(tankPosFeugen.first, tankPosFeugen.second);
+        float dStalagg = unit->GetDistance2d(tankPosStalagg.first, tankPosStalagg.second);
+        return dFeugen < dStalagg;
+    }
+
     Unit* GetNearestPet()
     {
         Unit* unit = nullptr;
@@ -1168,20 +1233,256 @@ public:
         }
         return unit;
     }
-    std::pair<float, float> PetPhaseGetPosForTank()
+
+    Unit* GetMarkedUnitRaw(uint8 iconIndex)
     {
-        if (GetNearestPet() == feugen)
+        Group* group = bot->GetGroup();
+        if (!group)
+            return nullptr;
+
+        ObjectGuid guid = group->GetTargetIcon(iconIndex);
+        if (guid.IsEmpty())
+            return nullptr;
+
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
+            return nullptr;
+
+        return unit;
+    }
+
+    bool IsPet(Unit const* unit) const
+    {
+        if (!unit)
+            return false;
+        if (Creature const* c = unit->ToCreature())
         {
-            return tankPosFeugen;
+            uint32 entry = c->GetEntry();
+            return entry == NPC_FEUGEN || entry == NPC_STALAGG;
         }
+        return false;
+    }
+
+    // Return the pet marked with the given RTI icon, if it is Stalagg/Feugen.
+    Unit* GetMarkedPet(uint8 iconIndex)
+    {
+        Unit* unit = GetMarkedUnitRaw(iconIndex);
+        return IsPet(unit) ? unit : nullptr;
+    }
+
+    // Decide which RTI pair is used for phase 1.
+    // Supported setups:
+    //  - skull + cross
+    //  - cross + square (recommended to avoid skull bias)
+    //  - skull + square
+    bool GetPetIconPair(uint8& primaryIcon, uint8& secondaryIcon)
+    {
+        if (GetMarkedPet(RAID_ICON_SKULL) && GetMarkedPet(RAID_ICON_CROSS))
+        {
+            primaryIcon = RAID_ICON_SKULL;
+            secondaryIcon = RAID_ICON_CROSS;
+            return true;
+        }
+
+        if (GetMarkedPet(RAID_ICON_CROSS) && GetMarkedPet(RAID_ICON_SQUARE))
+        {
+            primaryIcon = RAID_ICON_CROSS;
+            secondaryIcon = RAID_ICON_SQUARE;
+            return true;
+        }
+
+        if (GetMarkedPet(RAID_ICON_SKULL) && GetMarkedPet(RAID_ICON_SQUARE))
+        {
+            primaryIcon = RAID_ICON_SKULL;
+            secondaryIcon = RAID_ICON_SQUARE;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool HasPetIconPair()
+    {
+        uint8 primaryIcon = RAID_ICON_SKULL;
+        uint8 secondaryIcon = RAID_ICON_CROSS;
+        return GetPetIconPair(primaryIcon, secondaryIcon);
+    }
+
+    bool IsMainTankEngagedOnPets() const
+    {
+        Group* group = bot->GetGroup();
+        if (!group)
+            return false;
+
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !member->IsAlive())
+                continue;
+            if (!botAI->IsTank(member) || !botAI->IsMainTank(member))
+                continue;
+
+            Unit* victim = member->GetVictim();
+            if (IsPet(victim))
+                return true;
+        }
+        return false;
+    }
+
+    bool IsOffTankEngagedOnPets() const
+    {
+        Group* group = bot->GetGroup();
+        if (!group)
+            return false;
+
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !member->IsAlive())
+                continue;
+            if (!botAI->IsTank(member) || botAI->IsMainTank(member))
+                continue;
+
+            Unit* victim = member->GetVictim();
+            if (IsPet(victim))
+                return true;
+        }
+        return false;
+    }
+
+    bool IsAssignedToPrimarySide(Player* player)
+    {
+        if (!player)
+            return true;
+
+        if (botAI->IsTank(player))
+        {
+            if (NaxxHasStrategyAnyState(player, "tank face"))
+                return true;
+
+            if (NaxxHasStrategyAnyState(player, "tank assist") && !NaxxHasStrategyAnyState(player, "tank face"))
+                return false;
+
+            return botAI->IsMainTank(player);
+        }
+
+        Group* group = bot->GetGroup();
+        uint32 const membersCount = group ? group->GetMembersCount() : 0;
+        bool const is25Man = membersCount > 10;
+
+        uint32 const primaryHeals = is25Man ? 2u : 1u;
+        uint32 const primaryDps   = is25Man ? 9u : 3u;
+
+        if (botAI->IsHeal(player))
+        {
+            uint32 index = 0;
+            if (group)
+            {
+                for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                {
+                    Player* member = ref->GetSource();
+                    if (!member || !member->IsAlive())
+                        continue;
+
+                    if (botAI->IsTank(member) || !botAI->IsHeal(member))
+                        continue;
+
+                    if (member == player)
+                        return index < primaryHeals;
+
+                    ++index;
+                }
+            }
+
+        }
+
+        uint32 index = 0;
+        if (group)
+        {
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+            {
+                Player* member = ref->GetSource();
+                if (!member || !member->IsAlive())
+                    continue;
+
+                if (botAI->IsTank(member) || botAI->IsHeal(member))
+                    continue;
+
+                if (member == player)
+                    return index < primaryDps;
+
+                ++index;
+            }
+        }
+
+        int32 slotIndex = botAI->GetGroupSlotIndex(player);
+        if (slotIndex >= 0)
+            return (slotIndex % 2) == 0;
+
+        return (player->GetGUID().GetCounter() % 2) == 0;
+    }
+
+    Unit* GetAssignedPetForBot()
+    {
+        uint8 primaryIcon = RAID_ICON_SKULL;
+        uint8 secondaryIcon = RAID_ICON_CROSS;
+        bool hasPair = GetPetIconPair(primaryIcon, secondaryIcon);
+
+        if (botAI->IsTank(bot))
+        {
+            if (hasPair && (!bot->IsInCombat() || (!IsMainTankEngagedOnPets() && !IsOffTankEngagedOnPets())))
+            {
+                bool primarySide = IsAssignedToPrimarySide(bot);
+                if (Unit* marked = GetMarkedPet(primarySide ? primaryIcon : secondaryIcon))
+                    return marked;
+            }
+
+            Unit* feugenAlive = (feugen && feugen->IsAlive()) ? feugen : nullptr;
+            Unit* stalaggAlive = (stalagg && stalagg->IsAlive()) ? stalagg : nullptr;
+
+            if (feugenAlive || stalaggAlive)
+            {
+                float dFeugen = bot->GetDistance2d(tankPosFeugen.first, tankPosFeugen.second);
+                float dStalagg = bot->GetDistance2d(tankPosStalagg.first, tankPosStalagg.second);
+                if (hasPair && (dFeugen > 45.0f && dStalagg > 45.0f))
+                {
+                    bool primarySide = IsAssignedToPrimarySide(bot);
+                    if (Unit* marked = GetMarkedPet(primarySide ? primaryIcon : secondaryIcon))
+                        return marked;
+                }
+                bool onFeugenSide = IsOnFeugenSide(bot);
+                Unit* sidePet = onFeugenSide ? feugenAlive : stalaggAlive;
+                Unit* otherPet = onFeugenSide ? stalaggAlive : feugenAlive;
+                if (sidePet)
+                    return sidePet;
+                if (otherPet)
+                    return otherPet;
+            }
+
+            return GetNearestPet();
+         }
+
+        if (hasPair)
+        {
+            bool primarySide = IsAssignedToPrimarySide(bot);
+            Unit* target = GetMarkedPet(primarySide ? primaryIcon : secondaryIcon);
+            if (target)
+                return target;
+        }
+
+        return GetNearestPet();
+    }
+
+    std::pair<float, float> PetPhaseGetPosForTank(Unit* pet)
+    {
+        if (pet == feugen)
+            return tankPosFeugen;
         return tankPosStalagg;
     }
-    std::pair<float, float> PetPhaseGetPosForRanged()
+    std::pair<float, float> PetPhaseGetPosForRanged(Unit* pet)
     {
-        if (GetNearestPet() == feugen)
-        {
+        if (pet == feugen)
             return rangedPosFeugen;
-        }
         return rangedPosStalagg;
     }
 
