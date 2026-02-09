@@ -412,6 +412,19 @@ bool LoathebTrigger::IsActive() { return helper.UpdateBossAI(); }
 
 bool NothTrigger::IsActive() { return helper.UpdateBossAI(); }
 
+bool NothCurseTrigger::IsActive()
+{
+    if (!helper.UpdateBossAI())
+    {
+        return false;
+    }
+    if (bot->getClass() != CLASS_DRUID && bot->getClass() != CLASS_SHAMAN && bot->getClass() != CLASS_MAGE)
+    {
+        return false;
+    }
+    return helper.HasCurseInGroup();
+}
+
 bool ThaddiusPhasePetTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())

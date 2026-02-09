@@ -1011,6 +1011,24 @@ public:
         }
         return false;
     }
+    Player* GetAliveAssistTank() const
+    {
+        GuidVector members = AI_VALUE(GuidVector, "group members");
+        for (ObjectGuid const& guid : members)
+        {
+            Unit* member = botAI->GetUnit(guid);
+            if (!member || !member->IsAlive())
+            {
+                continue;
+            }
+            Player* player = member->ToPlayer();
+            if (player && botAI->IsAssistTank(player))
+            {
+                return player;
+            }
+        }
+        return nullptr;
+    }
 
 private:
     void Reset()

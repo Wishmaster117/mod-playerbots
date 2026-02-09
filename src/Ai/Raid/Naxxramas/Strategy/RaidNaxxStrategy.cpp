@@ -178,6 +178,12 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             NextAction("noth choose target", ACTION_RAID + 1)
         })
     );
+    triggers.push_back(
+        new TriggerNode("noth curse",
+        {
+            NextAction("cure party member", ACTION_RAID + 2)
+        })
+    );
 }
 
 void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)

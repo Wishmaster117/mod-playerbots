@@ -307,4 +307,13 @@ private:
     NothBossHelper helper;
 };
 
+class NothCurseTrigger : public Trigger
+{
+public:
+    NothCurseTrigger(PlayerbotAI* ai) : Trigger(ai, "noth curse"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    NothBossHelper helper;
+};
 #endif

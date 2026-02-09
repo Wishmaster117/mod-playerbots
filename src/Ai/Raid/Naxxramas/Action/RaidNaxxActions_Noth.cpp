@@ -18,6 +18,11 @@ bool NothChooseTargetAction::Execute(Event event)
     Unit* target_champion = nullptr;
     Unit* target_guardian = nullptr;
     Unit* target_warrior = nullptr;
+    Unit* target_assist_add = nullptr;
+    Unit* target_main_add = nullptr;
+    Unit* target_unassigned_add = nullptr;
+    Player* assist_tank = helper.GetAliveAssistTank();
+    bool has_assist_tank = assist_tank != nullptr;
 
     for (auto i = attackers.begin(); i != attackers.end(); ++i)
     {
@@ -37,12 +42,50 @@ bool NothChooseTargetAction::Execute(Event event)
             {
                 target_champion = unit;
             }
+            Player* victim = unit->GetVictim() ? unit->GetVictim()->ToPlayer() : nullptr;
+            if (victim && botAI->IsAssistTank(victim))
+            {
+                if (!target_assist_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_assist_add))
+                {
+                    target_assist_add = unit;
+                }
+            }
+            else if (victim && botAI->IsMainTank(victim))
+            {
+                if (!target_main_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_main_add))
+                {
+                    target_main_add = unit;
+                }
+            }
+            else if (!target_unassigned_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_unassigned_add))
+            {
+                target_unassigned_add = unit;
+            }
         }
         else if (botAI->EqualLowercaseName(unit->GetName(), "plagued guardian"))
         {
             if (!target_guardian || bot->GetDistance2d(unit) < bot->GetDistance2d(target_guardian))
             {
                 target_guardian = unit;
+            }
+            Player* victim = unit->GetVictim() ? unit->GetVictim()->ToPlayer() : nullptr;
+            if (victim && botAI->IsAssistTank(victim))
+            {
+                if (!target_assist_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_assist_add))
+                {
+                    target_assist_add = unit;
+                }
+            }
+            else if (victim && botAI->IsMainTank(victim))
+            {
+                if (!target_main_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_main_add))
+                {
+                    target_main_add = unit;
+                }
+            }
+            else if (!target_unassigned_add || bot->GetDistance2d(unit) < bot->GetDistance2d(target_unassigned_add))
+            {
+                target_unassigned_add = unit;
             }
         }
         else if (botAI->EqualLowercaseName(unit->GetName(), "plagued warrior"))
@@ -55,7 +98,11 @@ bool NothChooseTargetAction::Execute(Event event)
     }
 
     std::vector<Unit*> targets;
-    if (botAI->IsAssistTank(bot))
+    bool is_main_tank = botAI->IsMainTank(bot);
+    bool is_assist_tank = botAI->IsAssistTank(bot);
+    bool should_handle_adds = is_assist_tank || (is_main_tank && !has_assist_tank);
+
+    if (should_handle_adds)
     {
         Unit* warrior_needs_pickup = nullptr;
         for (auto i = attackers.begin(); i != attackers.end(); ++i)
@@ -70,7 +117,8 @@ bool NothChooseTargetAction::Execute(Event event)
                 continue;
             }
             if (unit->GetVictim() && unit->GetVictim()->ToPlayer() &&
-                !botAI->IsAssistTank(unit->GetVictim()->ToPlayer()))
+                ((is_assist_tank && !botAI->IsAssistTank(unit->GetVictim()->ToPlayer())) ||
+                 (is_main_tank && !has_assist_tank && !botAI->IsMainTank(unit->GetVictim()->ToPlayer()))))
             {
                 warrior_needs_pickup = unit;
                 break;
@@ -78,7 +126,8 @@ bool NothChooseTargetAction::Execute(Event event)
         }
         if (helper.IsBalconyPhase())
         {
-            targets = {warrior_needs_pickup, target_warrior, target_champion, target_guardian};
+            Unit* assigned_add = is_assist_tank ? target_assist_add : target_main_add;
+            targets = {assigned_add, target_unassigned_add, target_champion, target_guardian, target_warrior};
         }
         else
         {
@@ -87,7 +136,14 @@ bool NothChooseTargetAction::Execute(Event event)
     }
     else if (helper.IsBalconyPhase())
     {
-        targets = {target_champion, target_guardian, target_warrior};
+        if (has_assist_tank)
+        {
+            targets = {target_assist_add, target_main_add, target_unassigned_add, target_champion, target_guardian, target_warrior};
+        }
+        else
+        {
+            targets = {target_champion, target_guardian, target_unassigned_add, target_warrior};
+        }
     }
     else
     {
