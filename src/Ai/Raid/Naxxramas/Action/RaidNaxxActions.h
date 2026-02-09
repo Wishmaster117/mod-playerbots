@@ -87,7 +87,14 @@ public:
     {
         this->last_eruption_ms = 0;
         this->platform_phase = false;
+        this->last_platform_phase = false;
+        this->phase2_start_ms = 0;
+        this->phase2_last_ticks = 0;
         ResetSafe();
+        // Platform and arena are on different Z-levels; use explicit values to prevent bots
+        // from trying to path to arena waypoints while keeping the platform Z (and vice-versa).
+        platformZ = 276.54f;
+        arenaZ = 264.00f;
         waypoints.push_back(std::make_pair(2794.88f, -3668.12f));
         waypoints.push_back(std::make_pair(2775.49f, -3674.43f));
         waypoints.push_back(std::make_pair(2762.30f, -3684.59f));
@@ -112,7 +119,12 @@ protected:
     }
     uint32 last_eruption_ms;
     bool platform_phase;
+    bool last_platform_phase;
+    uint32 phase2_start_ms;
+    uint32 phase2_last_ticks;
     uint32 curr_safe, curr_dir;
+    float platformZ;
+    float arenaZ;
     std::vector<std::pair<float, float>> waypoints;
     std::pair<float, float> platform;
 };
@@ -122,6 +134,18 @@ class HeiganDanceMeleeAction : public HeiganDanceAction
 public:
     HeiganDanceMeleeAction(PlayerbotAI* ai) : HeiganDanceAction(ai) {}
     virtual bool Execute(Event event);
+};
+
+class HeiganDispelDecrepitFeverAction : public Action
+{
+public:
+    HeiganDispelDecrepitFeverAction(PlayerbotAI* ai) : Action(ai, "heigan dispel decrepit fever") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+
+private:
+    Unit* GetDecrepitFeverTarget() const;
+    bool CanDispelDisease() const;
 };
 
 class HeiganDanceRangedAction : public HeiganDanceAction

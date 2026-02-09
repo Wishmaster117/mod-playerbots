@@ -22,6 +22,7 @@ public:
 
         creators["heigan melee"] = &RaidNaxxTriggerContext::heigan_melee;
         creators["heigan ranged"] = &RaidNaxxTriggerContext::heigan_ranged;
+        creators["heigan decrepit fever"] = &RaidNaxxTriggerContext::heigan_decrepit_fever;
 
         creators["thaddius phase pet"] = &RaidNaxxTriggerContext::thaddius_phase_pet;
         creators["thaddius phase pet lose aggro"] = &RaidNaxxTriggerContext::thaddius_phase_pet_lose_aggro;
@@ -69,6 +70,7 @@ private:
     static Trigger* grobbulus_cloud(PlayerbotAI* ai) { return new GrobbulusCloudTrigger(ai); }
     static Trigger* heigan_melee(PlayerbotAI* ai) { return new HeiganMeleeTrigger(ai); }
     static Trigger* heigan_ranged(PlayerbotAI* ai) { return new HeiganRangedTrigger(ai); }
+    static Trigger* heigan_decrepit_fever(PlayerbotAI* ai) { return new HeiganDecrepitFeverTrigger(ai); }
 
     static Trigger* thaddius_phase_pet(PlayerbotAI* ai) { return new ThaddiusPhasePetTrigger(ai); }
     static Trigger* thaddius_phase_pet_lose_aggro(PlayerbotAI* ai) { return new ThaddiusPhasePetLoseAggroTrigger(ai); }

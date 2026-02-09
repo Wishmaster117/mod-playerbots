@@ -77,6 +77,13 @@ float HeiganDanceMultiplier::GetValue(Action* action)
     {
         return 0.0f;
     }
+
+    // Speed boost for Phase 2 only. In Phase 1, Aspect of the Pack can daze the tank
+    // if anyone gets hit, which is a common wipe cause on Heigan.
+    if (dynamic_cast<CastAspectOfThePackAction*>(action))
+    {
+        return platform_phase ? 1.0f : 0.0f;
+    }
     if (!platform_phase && !eruption_casting)
     {
         return 1.0f;

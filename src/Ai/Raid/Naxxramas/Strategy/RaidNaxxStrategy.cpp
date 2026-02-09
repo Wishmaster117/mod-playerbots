@@ -30,6 +30,11 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("heigan dance ranged", ACTION_RAID + 1) }
     ));
 
+    // Priority: dispel Decrepit Fever ASAP (tank first) during Phase 1.
+    triggers.push_back(new TriggerNode("heigan decrepit fever",
+        { NextAction("heigan dispel decrepit fever", ACTION_RAID + 5) }
+    ));
+
     // Kel'Thuzad
     triggers.push_back(
         new TriggerNode("kel'thuzad",

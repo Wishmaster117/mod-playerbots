@@ -70,6 +70,13 @@ public:
     bool IsActive() override;
 };
 
+class HeiganDecrepitFeverTrigger : public Trigger
+{
+public:
+    HeiganDecrepitFeverTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan decrepit fever") {}
+    bool IsActive() override;
+};
+
 class RazuviousTankTrigger : public Trigger
 {
 public:

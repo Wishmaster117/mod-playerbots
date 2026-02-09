@@ -106,6 +106,51 @@ bool HeiganRangedTrigger::IsActive()
     return botAI->IsRanged(bot);
 }
 
+bool HeiganDecrepitFeverTrigger::IsActive()
+{
+    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+    if (!heigan)
+    {
+        return false;
+    }
+
+    // Only relevant for dispellers; keep the check cheap and local.
+    switch (bot->getClass())
+    {
+        case CLASS_PALADIN:
+        case CLASS_PRIEST:
+        case CLASS_SHAMAN:
+            break;
+        default:
+            return false;
+    }
+
+    Group* group = bot->GetGroup();
+    if (!group)
+    {
+        return false;
+    }
+
+    float range = botAI->GetRange("heal");
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+        {
+            continue;
+        }
+        if (!member->HasAura(NaxxSpellIds::DecrepitFever))
+        {
+            continue;
+        }
+        if (bot->IsWithinDistInMap(member, range))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool RazuviousTankTrigger::IsActive()
 {
     Difficulty diff = bot->GetRaidDifficulty();
