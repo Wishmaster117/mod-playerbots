@@ -9,11 +9,12 @@
 namespace
 {
 constexpr float kTankZ = 273.5857f;
-constexpr float kMeleeBehindDistance = 3.0f;
-constexpr float kCasterBehindDistance = 12.0f;
+constexpr float kMeleeBehindDistance = 4.5f;
+constexpr float kCasterBehindDistance = 15.0f;
 constexpr float kCasterSideOffset = 6.0f;
-constexpr float kHealerBehindDistance = 18.0f;
+constexpr float kHealerBehindDistance = 22.0f;
 constexpr float kSporeOnHealerRadius = 10.0f;
+constexpr float kSporeOnTankRadius = 10.0f;
 constexpr float kSporeCleanupMaxRange = 35.0f;     // keep it strictly "no chase"
 constexpr float kSporeRunnerNearRange = 15.0f;     // if runner is already near, don't steal the job
 
@@ -190,6 +191,49 @@ bool IsSporeInHealerPack(Player* bot, PlayerbotAI* botAI, Unit* spore)
     return false;
 }
 
+bool IsSporeInTankPack(Unit* mainTank, Unit* spore)
+{
+    if (!mainTank || !spore)
+        return false;
+
+    if (!mainTank->IsAlive())
+        return false;
+
+    return mainTank->GetDistance(spore) <= kSporeOnTankRadius;
+}
+
+Unit* SelectTankDangerSpore(Player* bot, PlayerbotAI* botAI, Unit* boss, Unit* mainTank, GuidVector const& attackers)
+{
+    if (!bot || !botAI || !boss)
+        return nullptr;
+
+    Unit* selected = nullptr;
+    if (!mainTank || !mainTank->IsAlive())
+        return nullptr;
+
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
+            continue;
+
+        if (!botAI->EqualLowercaseName(unit->GetName(), "spore"))
+            continue;
+
+        if (!IsSporeInTankPack(mainTank, unit))
+            continue;
+
+        if (!selected || mainTank->GetDistance(unit) < mainTank->GetDistance(selected) ||
+            (std::abs(mainTank->GetDistance(unit) - mainTank->GetDistance(selected)) < 0.001f &&
+             boss->GetDistance(unit) < boss->GetDistance(selected)))
+        {
+            selected = unit;
+        }
+    }
+
+    return selected;
+}
+
 bool HasWandEquipped(Player* bot)
 {
     if (!bot)
@@ -325,6 +369,13 @@ bool LoathebPositionAction::Execute(Event event)
             if (isSporeRunner)
             {
                 GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
+                Unit* mainTank = AI_VALUE(Unit*, "main tank");
+                Unit* tankDangerSpore = SelectTankDangerSpore(bot, botAI, boss, mainTank, attackers);
+                if (tankDangerSpore)
+                {
+                    sporeTarget = tankDangerSpore;
+                }
+
                 for (ObjectGuid const& guid : attackers)
                 {
                     Unit* unit = botAI->GetUnit(guid);
@@ -335,6 +386,15 @@ bool LoathebPositionAction::Execute(Event event)
                     if (botAI->EqualLowercaseName(unit->GetName(), "spore") &&
                         (!hasOtherSideCasters || GetSporeSideIndex(boss, unit) == sideIndex))
                     {
+                        if (IsSporeInTankPack(mainTank, unit))
+                        {
+                            if (!sporeTarget || bot->GetDistance(unit) < bot->GetDistance(sporeTarget))
+                            {
+                                sporeTarget = unit;
+                            }
+                            continue;
+                        }
+
                         if (!sporeTarget || bot->GetDistance(unit) < bot->GetDistance(sporeTarget))
                         {
                             sporeTarget = unit;
@@ -390,6 +450,8 @@ bool LoathebChooseTargetAction::Execute(Event event)
         hasOtherSideCasters = GetCasterCountForSide(bot, botAI, otherSideIndex) > 0;
         isSporeRunner = IsSporeRunner(bot, botAI, sideIndex);
     }
+    Unit* mainTank = AI_VALUE(Unit*, "main tank");
+    Unit* tankDangerSpore = SelectTankDangerSpore(bot, botAI, boss, mainTank, attackers);
     for (auto i = attackers.begin(); i != attackers.end(); ++i)
     {
         Unit* unit = botAI->GetUnit(*i);
@@ -408,7 +470,7 @@ bool LoathebChooseTargetAction::Execute(Event event)
             if (isSporeRunner)
             {
                 uint8 sporeSide = GetSporeSideIndex(boss, unit);
-                if (!hasOtherSideCasters || sporeSide == sideIndex)
+                if (IsSporeInTankPack(mainTank, unit) || !hasOtherSideCasters || sporeSide == sideIndex)
                 {
                     if (!target_spore || bot->GetDistance(unit) < bot->GetDistance(target_spore))
                     {
@@ -423,11 +485,25 @@ bool LoathebChooseTargetAction::Execute(Event event)
         }
     }
 
-    // --- Spore cleanup: if a spore sticks on the healer pack and the spore-runner isn't close, assign ONE caster to "tap" it safely. ---
-    if (target_spore_any && target_boss && IsSporeInHealerPack(bot, botAI, target_spore_any))
+    // Hard priority: if a spore is close to the tank, force ranged DPS to pick that spore first.
+    if (tankDangerSpore && botAI->IsRanged(bot) && !botAI->IsHeal(bot))
+        target_spore = tankDangerSpore;
+
+    // --- Spore cleanup: if a spore sticks on the healer pack OR tank pack and the spore-runner isn't close,
+    // assign ONE caster to "tap" it safely. ---
+    Unit* dangerSpore = nullptr;
+    if (target_spore_any)
+    {
+        if (IsSporeInTankPack(mainTank, target_spore_any))
+            dangerSpore = target_spore_any;
+        else if (IsSporeInHealerPack(bot, botAI, target_spore_any))
+            dangerSpore = target_spore_any;
+    }
+
+    if (dangerSpore && target_boss)
     {
         // Identify the spore runner for the spore's side (if any).
-        uint8 const sporeSide = GetSporeSideIndex(boss, target_spore_any);
+        uint8 const sporeSide = GetSporeSideIndex(boss, dangerSpore);
         ObjectGuid const sporeRunnerGuid = SelectRangedDpsLeaderForSide(bot, botAI, sporeSide);
         Player* sporeRunner = nullptr;
         if (!sporeRunnerGuid.IsEmpty())
@@ -440,18 +516,17 @@ bool LoathebChooseTargetAction::Execute(Event event)
             }
         }
 
-        bool const runnerIsNear = (sporeRunner && sporeRunner->IsAlive() && sporeRunner->GetDistance(target_spore_any) <= kSporeRunnerNearRange);
-        if (!runnerIsNear)
+        if (!(sporeRunner && sporeRunner->IsAlive() && sporeRunner->GetDistance(dangerSpore) <= kSporeRunnerNearRange))
         {
             ObjectGuid const cleanupGuid = SelectSporeCleanupCaster(bot, botAI, target_spore_any, sporeRunnerGuid);
             if (!cleanupGuid.IsEmpty() && bot->GetGUID() == cleanupGuid)
             {
                 // No chase: only do it if we're already in a safe ranged window and LoS.
-                if (bot->IsWithinDistInMap(target_spore_any, kSporeCleanupMaxRange) && bot->IsWithinLOSInMap(target_spore_any))
+                if (bot->IsWithinDistInMap(dangerSpore, kSporeCleanupMaxRange) && bot->IsWithinLOSInMap(dangerSpore))
                 {
                     // Temporarily switch target -> apply ONE instant ranged hit -> immediately go back to boss.
-                    Attack(target_spore_any);
-                    DoSafeInstantRangedHit(botAI, bot, target_spore_any);
+                    Attack(dangerSpore);
+                    DoSafeInstantRangedHit(botAI, bot, dangerSpore);
                     Attack(target_boss);
                     return true;
                 }
