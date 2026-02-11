@@ -15,27 +15,21 @@ bool HeiganDanceAction::CalculateSafe()
     uint32 now = getMSTime();
     platform_phase = boss->IsWithinDist2d(platform.first, platform.second, 10.0f);
 
-    // Phase 2: boss on platform -> "fast dance"
-    // Eruptions are not reliably detectable via boss casting in Phase 2.
-    // Drive safe zones by a timer using the known pattern:
-    // 1-2-3-4-3-2-1-2-3-4-3-2 (bounce 0-1-2-3-2-1-0-...)
+    // Phase 2: boss on platform "fast dance"
     if (platform_phase)
     {
-        // Entering Phase 2: reset sequence and start the dance clock.
         if (!last_platform_phase)
         {
-            ResetSafe();             // zone 1 at start
+            ResetSafe();
             phase2_start_ms = now;
             phase2_last_ticks = 0;
         }
 
-        // Tunables (can be adjusted after testing):
         // - firstEruptionDelayMs: time after teleport for the first eruption tick.
-        //   Must allow raid to reach zone 1 first.
         // - periodMs: eruption tick interval.
         // - moveDelayMs: shift the zone-change slightly AFTER the tick so bots move after the eruption.
-        static constexpr uint32 firstEruptionDelayMs = 1800;
-        static constexpr uint32 periodMs = 1000;
+        static constexpr uint32 firstEruptionDelayMs = 8000;
+        static constexpr uint32 periodMs = 4000;
         static constexpr uint32 moveDelayMs = 150;
 
         uint32 base = phase2_start_ms + firstEruptionDelayMs + moveDelayMs;
@@ -110,13 +104,21 @@ bool HeiganDanceRangedAction::Execute(Event event)
     CalculateSafe();
     if (!platform_phase)
     {
-        if (MoveTo(bot->GetMapId(), platform.first, platform.second, platformZ, false, false, false, false,
-                   MovementPriority::MOVEMENT_COMBAT))
+        Unit* boss = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+        bool tooCloseToBoss = boss && bot->IsWithinDistInMap(boss, 20.0f);
+        bool onPlatform = bot->IsWithinDist2d(platform.first, platform.second, 3.0f);
+
+        if (!onPlatform || tooCloseToBoss)
         {
-            return true;
+            if (MoveTo(bot->GetMapId(), platform.first, platform.second, platformZ, false, false, false, false,
+                       MovementPriority::MOVEMENT_COMBAT))
+            {
+                return true;
+            }
+            return MoveInside(bot->GetMapId(), platform.first, platform.second, platformZ, 2.0f,
+                              MovementPriority::MOVEMENT_COMBAT);
         }
-        return MoveInside(bot->GetMapId(), platform.first, platform.second, platformZ, 2.0f,
-                          MovementPriority::MOVEMENT_COMBAT);
+        return false;
     }
     botAI->InterruptSpell();
         return MoveInside(bot->GetMapId(), waypoints[curr_safe].first, waypoints[curr_safe].second, arenaZ, 0,
@@ -127,9 +129,7 @@ Unit* HeiganDispelDecrepitFeverAction::GetDecrepitFeverTarget() const
 {
     Group* group = bot->GetGroup();
     if (!group)
-    {
         return nullptr;
-    }
 
     // Prioritize the main tank if possible.
     Unit* best = nullptr;
@@ -137,28 +137,20 @@ Unit* HeiganDispelDecrepitFeverAction::GetDecrepitFeverTarget() const
     {
         Player* member = gref->GetSource();
         if (!member || !member->IsAlive())
-        {
             continue;
-        }
+
         if (!member->HasAura(NaxxSpellIds::DecrepitFever))
-        {
             continue;
-        }
+
         if (!bot->IsWithinDistInMap(member, botAI->GetRange("heal")))
-        {
             continue;
-        }
 
         if (botAI->IsMainTank(member))
-        {
             return member;
-        }
 
         // Keep first match as fallback.
         if (!best)
-        {
             best = member;
-        }
     }
     return best;
 }
@@ -201,9 +193,6 @@ bool HeiganDispelDecrepitFeverAction::Execute(Event event)
     {
         return false;
     }
-
-    // Prefer the most capable spell per class, but never duplicate full dispel logic.
-    // We only need to cover Decrepit Fever for this encounter.
     if (bot->getClass() == CLASS_PALADIN)
     {
         if (botAI->CanCastSpell("cleanse", target) && botAI->CastSpell("cleanse", target))
@@ -212,7 +201,6 @@ bool HeiganDispelDecrepitFeverAction::Execute(Event event)
         }
         return botAI->CanCastSpell("purify", target) && botAI->CastSpell("purify", target);
     }
-
     if (botAI->CanCastSpell("cure disease", target) && botAI->CastSpell("cure disease", target))
     {
         return true;

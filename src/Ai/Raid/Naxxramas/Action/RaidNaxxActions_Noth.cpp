@@ -131,7 +131,14 @@ bool NothChooseTargetAction::Execute(Event event)
         }
         else
         {
-            targets = {warrior_needs_pickup, target_warrior, target_boss};
+            if (is_assist_tank)
+            {
+                targets = {warrior_needs_pickup, target_warrior};
+            }
+            else
+            {
+                targets = {warrior_needs_pickup, target_warrior, target_boss};
+            }
         }
     }
     else if (helper.IsBalconyPhase())
@@ -202,6 +209,48 @@ bool NothPositionAction::Execute(Event event)
                           loose_warrior->GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
         }
         Unit* currentTarget = AI_VALUE(Unit*, "current target");
+        if (currentTarget && AI_VALUE2(bool, "has aggro", "current target"))
+        {
+            bool isNothAdd = botAI->EqualLowercaseName(currentTarget->GetName(), "plagued warrior") ||
+                             botAI->EqualLowercaseName(currentTarget->GetName(), "plagued champion") ||
+                             botAI->EqualLowercaseName(currentTarget->GetName(), "plagued guardian");
+            if (isNothAdd)
+            {
+                GuidVector members = AI_VALUE(GuidVector, "group members");
+                Unit* closestHealer = nullptr;
+                float closestHealerDistance = 0.0f;
+                for (ObjectGuid const& guid : members)
+                {
+                    Unit* member = botAI->GetUnit(guid);
+                    if (!member || member == bot || !member->IsAlive())
+                    {
+                        continue;
+                    }
+
+                    Player* memberPlayer = member->ToPlayer();
+                    if (!memberPlayer || !botAI->IsHeal(memberPlayer))
+                    {
+                        continue;
+                    }
+
+                    float distance = bot->GetDistance2d(member);
+                    if (!closestHealer || distance < closestHealerDistance)
+                    {
+                        closestHealer = member;
+                        closestHealerDistance = distance;
+                    }
+                }
+
+                if (closestHealer && closestHealerDistance > 30.0f)
+                {
+                    float angle = closestHealer->GetAngle(bot);
+                    float dx = closestHealer->GetPositionX() + cos(angle) * 25.0f;
+                    float dy = closestHealer->GetPositionY() + sin(angle) * 25.0f;
+                    return MoveTo(NAXX_MAP_ID, dx, dy, bot->GetPositionZ(), false, false, false, false,
+                                  MovementPriority::MOVEMENT_COMBAT);
+                }
+            }
+        }
         if (currentTarget && botAI->EqualLowercaseName(currentTarget->GetName(), "plagued warrior"))
         {
             GuidVector friendlyPlayers = AI_VALUE(GuidVector, "nearest friendly players");
