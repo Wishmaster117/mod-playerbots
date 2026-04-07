@@ -1,9 +1,10 @@
 
-#ifndef _PLAYERBOT_RAIDNAXXMULTIPLIERS_H
-#define _PLAYERBOT_RAIDNAXXMULTIPLIERS_H
+#ifndef _PLAYERRBOT_RAIDNAXXMULTIPLIERS_H_
+#define _PLAYERRBOT_RAIDNAXXMULTIPLIERS_H_
 
 #include "Multiplier.h"
 #include "RaidNaxxBossHelper.h"
+#include "GenericSpellActions.h"
 
 class GrobbulusMultiplier : public Multiplier
 {
@@ -13,15 +14,14 @@ public:
 public:
     virtual float GetValue(Action* action);
 };
+class HeiganDanceMultiplier : public Multiplier
+{
+public:
+    HeiganDanceMultiplier(PlayerbotAI* ai) : Multiplier(ai, "helgan dance") {}
 
-//class HeiganDanceMultiplier : public Multiplier
-//{
-//public:
-//    HeiganDanceMultiplier(PlayerbotAI* ai) : Multiplier(ai, "helgan dance") {}
-//
-//public:
-//    virtual float GetValue(Action* action);
-//};
+public:
+    virtual float GetValue(Action* action);
+};
 
 class LoathebGenericMultiplier : public Multiplier
 {
@@ -58,7 +58,9 @@ private:
 class InstructorRazuviousGenericMultiplier : public Multiplier
 {
 public:
-    InstructorRazuviousGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "instructor razuvious generic"), helper(ai) {}
+    InstructorRazuviousGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "instructor razuvious generic"), helper(ai)
+    {
+    }
     virtual float GetValue(Action* action);
 
 private:
@@ -84,10 +86,10 @@ public:
     virtual float GetValue(Action* action);
 };
 
-class FourHorsemenGenericMultiplier : public Multiplier
+class FourhorsemanGenericMultiplier : public Multiplier
 {
 public:
-    FourHorsemenGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "four horsemen generic") {}
+    FourhorsemanGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "fourhorseman generic") {}
 
 public:
     virtual float GetValue(Action* action);
@@ -110,6 +112,16 @@ public:
 
 private:
     GluthBossHelper helper;
+};
+
+class NothGenericMultiplier : public Multiplier
+{
+public:
+    NothGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "noth generic"), helper(ai) {}
+    float GetValue(Action* action) override;
+
+private:
+    NothBossHelper helper;
 };
 
 #endif

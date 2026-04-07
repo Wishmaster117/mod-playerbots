@@ -22,13 +22,18 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     ));
 
     // Heigan the Unclean
-    //triggers.push_back(new TriggerNode("heigan melee",
-    //    { NextAction("heigan dance melee", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("heigan melee",
+        { NextAction("heigan dance melee", ACTION_RAID + 1) }
+    ));
 
-    //triggers.push_back(new TriggerNode("heigan ranged",
-    //    { NextAction("heigan dance ranged", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("heigan ranged",
+        { NextAction("heigan dance ranged", ACTION_RAID + 1) }
+    ));
+
+    // Priority: dispel Decrepit Fever ASAP (tank first) during Phase 1.
+    triggers.push_back(new TriggerNode("heigan decrepit fever",
+        { NextAction("heigan dispel decrepit fever", ACTION_RAID + 5) }
+    ));
 
     // Kel'Thuzad
     triggers.push_back(
@@ -41,7 +46,10 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // Anub'Rekhan
     triggers.push_back(new TriggerNode("anub'rekhan",
-        { NextAction("anub'rekhan position", ACTION_RAID + 1) }
+        {
+            NextAction("anub'rekhan position", ACTION_RAID + 2),
+            NextAction("anub'rekhan choose target", ACTION_RAID + 1)
+        }
     ));
 
      // Grand Widow Faerlina
@@ -49,7 +57,22 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("avoid aoe", ACTION_RAID + 1) }
     ));
 
+    triggers.push_back(new TriggerNode("faerlina frenzy",
+        {
+            NextAction("tranquilizing shot", ACTION_RAID + 4),
+            NextAction("faerlina sacrifice worshipper", ACTION_RAID + 3)
+        }
+    ));
+
     // Maexxna
+    triggers.push_back(new TriggerNode("maexxna web wrap",
+        { NextAction("maexxna attack web wrap", ACTION_RAID + 5) }
+    ));
+
+    triggers.push_back(new TriggerNode("maexxna spiderlings",
+        { NextAction("maexxna tank spiderlings", ACTION_RAID + 2) }
+    ));
+
     triggers.push_back(
         new TriggerNode("maexxna",
         {
@@ -58,26 +81,35 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         })
     );
 
+    // Gothik the Harvester
+    triggers.push_back(new TriggerNode("gothik move to assigned side",
+        { NextAction("gothik move to assigned side", ACTION_RAID + 4) }
+    ));
+
+    triggers.push_back(new TriggerNode("gothik choose target",
+        { NextAction("gothik choose target", ACTION_RAID + 1) }
+    ));
+
     // Patchwerk
-    //triggers.push_back(new TriggerNode("patchwerk tank",
-    //    { NextAction("tank face", ACTION_RAID + 2) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk tank",
+        { NextAction("tank face", ACTION_RAID + 2) }
+    ));
 
-    //triggers.push_back(new TriggerNode("patchwerk ranged",
-    //    { NextAction("patchwerk ranged position", ACTION_RAID + 2) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk ranged",
+        { NextAction("patchwerk ranged position", ACTION_RAID + 2) }
+    ));
 
-    //triggers.push_back(new TriggerNode("patchwerk non-tank",
-    //    { NextAction("rear flank", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk non-tank",
+        { NextAction("rear flank", ACTION_RAID + 1) }
+    ));
 
     // Thaddius
     triggers.push_back(new TriggerNode("thaddius phase pet",
-        { NextAction("thaddius attack nearest pet", ACTION_RAID + 1) }
+        { NextAction("thaddius attack nearest pet", ACTION_RAID + 6) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase pet lose aggro",
-        { NextAction("taunt spell", ACTION_RAID + 2) }
+        { NextAction("taunt spell", ACTION_RAID + 7) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase transition",
@@ -97,13 +129,13 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("razuvious target", ACTION_RAID + 1) }
     ));
 
-    // four horsemen
-    triggers.push_back(new TriggerNode("four horsemen attractors",
-        { NextAction("four horsemen attract alternatively", ACTION_RAID + 1) }
+    // four horseman
+    triggers.push_back(new TriggerNode("horseman attractors",
+        { NextAction("horseman attract alternatively", ACTION_RAID + 1) }
     ));
 
-    triggers.push_back(new TriggerNode("four horsemen except attractors",
-        { NextAction("four horsemen attack in order", ACTION_RAID + 1) }
+    triggers.push_back(new TriggerNode("horseman except attractors",
+        { NextAction("horseman attack in order", ACTION_RAID + 1) }
     ));
 
     // sapphiron
@@ -138,19 +170,33 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         })
     );
 
+    // Noth the Plaguebringer
+    triggers.push_back(
+        new TriggerNode("noth",
+        {
+            NextAction("noth position", ACTION_RAID + 1),
+            NextAction("noth choose target", ACTION_RAID + 1)
+        })
+    );
+    triggers.push_back(
+        new TriggerNode("noth curse",
+        {
+            NextAction("cure party member", ACTION_RAID + 2)
+        })
+    );
 }
 
 void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new GrobbulusMultiplier(botAI));
-    //multipliers.push_back(new HeiganDanceMultiplier(botAI));
+    multipliers.push_back(new HeiganDanceMultiplier(botAI));
     multipliers.push_back(new LoathebGenericMultiplier(botAI));
     multipliers.push_back(new ThaddiusGenericMultiplier(botAI));
     multipliers.push_back(new SapphironGenericMultiplier(botAI));
     multipliers.push_back(new InstructorRazuviousGenericMultiplier(botAI));
     multipliers.push_back(new KelthuzadGenericMultiplier(botAI));
     multipliers.push_back(new AnubrekhanGenericMultiplier(botAI));
-    multipliers.push_back(new FourHorsemenGenericMultiplier(botAI));
-    // multipliers.push_back(new GothikGenericMultiplier(botAI));
+    multipliers.push_back(new FourhorsemanGenericMultiplier(botAI));
     multipliers.push_back(new GluthGenericMultiplier(botAI));
+    multipliers.push_back(new NothGenericMultiplier(botAI));
 }

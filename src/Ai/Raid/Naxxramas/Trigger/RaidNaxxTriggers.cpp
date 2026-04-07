@@ -9,8 +9,9 @@ bool MutatingInjectionMeleeTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grobbulus");
     if (!boss)
+    {
         return false;
-
+    }
     return MutatingInjectionTrigger::IsActive() && !botAI->IsRanged(bot);
 }
 
@@ -18,8 +19,9 @@ bool MutatingInjectionRangedTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grobbulus");
     if (!boss)
+    {
         return false;
-
+    }
     return MutatingInjectionTrigger::IsActive() && botAI->IsRanged(bot);
 }
 
@@ -28,8 +30,9 @@ bool AuraRemovedTrigger::IsActive()
     bool check = botAI->HasAura(name, bot, false, false, -1, true);
     bool ret = false;
     if (prev_check && !check)
+    {
         ret = true;
-
+    }
     prev_check = check;
     return ret;
 }
@@ -38,8 +41,9 @@ bool MutatingInjectionRemovedTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grobbulus");
     if (!boss)
+    {
         return false;
-
+    }
     return HasNoAuraTrigger::IsActive() && botAI->GetState() == BOT_STATE_COMBAT && botAI->IsRanged(bot);
 }
 
@@ -47,61 +51,113 @@ bool GrobbulusCloudTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grobbulus");
     if (!boss)
+    {
         return false;
-
+    }
     if (!botAI->IsMainTank(bot))
+    {
         return false;
-
+    }
     // bot->Yell("has aggro on " + boss->GetName() + " : " + to_string(AI_VALUE2(bool, "has aggro", "boss target")),
     // LANG_UNIVERSAL);
     if (!AI_VALUE2(bool, "has aggro", "boss target"))
+    {
         return false;
-
+    }
     uint32 now = getMSTime();
     bool poison_cloud_casting = false;
     if (boss->HasUnitState(UNIT_STATE_CASTING))
     {
         Spell* spell = boss->GetCurrentSpell(CURRENT_GENERIC_SPELL);
         if (!spell)
+        {
             spell = boss->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
-
+        }
         if (spell)
+        {
             poison_cloud_casting = NaxxSpellIds::MatchesAnySpellId(spell->GetSpellInfo(), {NaxxSpellIds::PoisonCloud});
-
+        }
     }
     if (!poison_cloud_casting && last_cloud_ms != 0 && now - last_cloud_ms < CloudRotationDelayMs)
+    {
         return false;
-
+    }
     last_cloud_ms = now;
     return true;
 }
 
-//bool HeiganMeleeTrigger::IsActive()
-//{
-//    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
-//    if (!heigan)
-//    {
-//        return false;
-//    }
-//    return !botAI->IsRanged(bot);
-//}
-//
-//bool HeiganRangedTrigger::IsActive()
-//{
-//    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
-//    if (!heigan)
-//    {
-//        return false;
-//    }
-//    return botAI->IsRanged(bot);
-//}
+bool HeiganMeleeTrigger::IsActive()
+{
+    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+    if (!heigan)
+    {
+        return false;
+    }
+    return !botAI->IsRanged(bot);
+}
+
+bool HeiganRangedTrigger::IsActive()
+{
+    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+    if (!heigan)
+    {
+        return false;
+    }
+    return botAI->IsRanged(bot);
+}
+
+bool HeiganDecrepitFeverTrigger::IsActive()
+{
+    Unit* heigan = AI_VALUE2(Unit*, "find target", "heigan the unclean");
+    if (!heigan)
+    {
+        return false;
+    }
+
+    // Only relevant for dispellers; keep the check cheap and local.
+    switch (bot->getClass())
+    {
+        case CLASS_PALADIN:
+        case CLASS_PRIEST:
+        case CLASS_SHAMAN:
+            break;
+        default:
+            return false;
+    }
+
+    Group* group = bot->GetGroup();
+    if (!group)
+    {
+        return false;
+    }
+
+    float range = botAI->GetRange("heal");
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+        {
+            continue;
+        }
+        if (!member->HasAura(NaxxSpellIds::DecrepitFever))
+        {
+            continue;
+        }
+        if (bot->IsWithinDistInMap(member, range))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool RazuviousTankTrigger::IsActive()
 {
     Difficulty diff = bot->GetRaidDifficulty();
     if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
+    {
         return helper.UpdateBossAI() && botAI->IsTank(bot);
-
+    }
     return helper.UpdateBossAI() && bot->getClass() == CLASS_PRIEST;
 }
 
@@ -109,40 +165,45 @@ bool RazuviousNontankTrigger::IsActive()
 {
     Difficulty diff = bot->GetRaidDifficulty();
     if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
+    {
         return helper.UpdateBossAI() && !(botAI->IsTank(bot));
-
+    }
     return helper.UpdateBossAI() && !(bot->getClass() == CLASS_PRIEST);
 }
 
-bool FourHorsemenAttractorsTrigger::IsActive()
+bool HorsemanAttractorsTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsAttracter(bot);
 }
 
-bool FourHorsemenExceptAttractorsTrigger::IsActive()
+bool HorsemanExceptAttractorsTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return !helper.IsAttracter(bot);
 }
 
 bool SapphironGroundTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsPhaseGround();
 }
 
 bool SapphironFlightTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsPhaseFlight();
 }
 
@@ -151,107 +212,242 @@ bool GluthTrigger::IsActive() { return helper.UpdateBossAI(); }
 bool GluthMainTankMortalWoundTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     if (!botAI->IsAssistTankOfIndex(bot, 0))
+    {
         return false;
-
+    }
     Unit* mt = AI_VALUE(Unit*, "main tank");
     if (!mt)
+    {
         return false;
-
+    }
     Aura* aura = NaxxSpellIds::GetAnyAura(mt, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
     if (!aura)
     {
-        // Fallback to name for custom spell data.
         aura = botAI->GetAura("mortal wound", mt, false, true);
     }
     if (!aura || aura->GetStackAmount() < 5)
+    {
         return false;
-
+    }
     return true;
 }
 
 bool KelthuzadTrigger::IsActive() { return helper.UpdateBossAI(); }
 
-bool AnubrekhanTrigger::IsActive() {
+bool AnubrekhanTrigger::IsActive()
+{
     Unit* boss = AI_VALUE2(Unit*, "find target", "anub'rekhan");
     if (!boss)
         return false;
 
-    return true;
+    return bot->IsInCombat() || boss->IsInCombat();
 }
 
 bool FaerlinaTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "grand widow faerlina");
     if (!boss)
+    {
         return false;
-
+    }
     return true;
+}
+
+bool FaerlinaFrenzyTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "grand widow faerlina");
+    if (!boss)
+    {
+        return false;
+    }
+
+    // Only relevant during the actual encounter.
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+    {
+        return false;
+    }
+
+    // Frenzy is handled either via a sacrifice (Widow's Embrace) or by removing the enrage.
+    if (boss->HasAura(NaxxSpellIds::FaerlinaWidowsEmbrace))
+    {
+        return false;
+    }
+
+    return boss->HasAura(NaxxSpellIds::FaerlinaFrenzy);
 }
 
 bool MaexxnaTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
     if (!boss)
+    {
         return false;
-
+    }
     return !botAI->IsTank(bot);
 }
 
-//bool PatchwerkTankTrigger::IsActive()
-//{
-//    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
-//    if (!boss)
-//    {
-//        return false;
-//    }
-//    return !botAI->IsTank(bot) && !botAI->IsRanged(bot);
-//}
-//
-//bool PatchwerkRangedTrigger::IsActive()
-//{
-//    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
-//    if (!boss)
-//    {
-//        return false;
-//    }
-//    return !botAI->IsTank(bot) && botAI->IsRanged(bot);
-//}
-//
-//bool PatchwerkNonTankTrigger::IsActive()
-//{
-//    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
-//    if (!boss)
-//    {
-//        return false;
-//    }
-//    return !botAI->IsTank(bot);
-//}
+bool MaexxnaWebWrapTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
+    if (!boss)
+    {
+        return false;
+    }
+
+    // Only relevant during the actual encounter.
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+    {
+        return false;
+    }
+
+    // Prefer ranged DPS/casters to break cocoons with minimal movement.
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsRanged(bot))
+    {
+        return false;
+    }
+
+    // If any member is web-wrapped, we want to break it.
+    if (Group* group = bot->GetGroup())
+    {
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !member->IsAlive())
+                continue;
+
+            if (botAI->HasAura(NaxxSpellIds::MaexxnaWebWrapStun, member))
+                return true;
+        }
+    }
+
+    // Or if the cocoon NPC exists in our target list.
+    static constexpr uint32 MaexxnaWebWrapEntry = 16486;
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit->GetEntry() == NaxxSpellIds::MaexxnaWebWrapEntry)
+            return true;
+    }
+
+    return false;
+}
+
+bool MaexxnaSpiderlingsTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
+    if (!boss)
+        return false;
+
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+        return false;
+
+    if (!botAI->IsTank(bot) || botAI->IsMainTank(bot))
+        return false;
+
+    GuidVector attackers = AI_VALUE(GuidVector, "attackers");
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit->GetEntry() == NaxxSpellIds::MaexxnaSpiderlingEntry)
+            return true;
+    }
+
+    return false;
+}
+
+bool GothikMoveToAssignedSideTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "gothik the harvester");
+    if (!boss)
+        return false;
+
+    return bot->GetDistance(boss) <= 160.0f;
+}
+
+bool GothikChooseTargetTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "gothik the harvester");
+    if (!boss)
+        return false;
+
+    return boss->IsInCombat() || bot->IsInCombat();
+}
+
+bool PatchwerkTankTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
+    if (!boss)
+    {
+        return false;
+    }
+    return !botAI->IsTank(bot) && !botAI->IsRanged(bot);
+}
+
+bool PatchwerkRangedTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
+    if (!boss)
+    {
+        return false;
+    }
+    return !botAI->IsTank(bot) && botAI->IsRanged(bot);
+}
+
+bool PatchwerkNonTankTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");
+    if (!boss)
+    {
+        return false;
+    }
+    return !botAI->IsTank(bot);
+}
 
 bool LoathebTrigger::IsActive() { return helper.UpdateBossAI(); }
+
+bool NothTrigger::IsActive() { return helper.UpdateBossAI(); }
+
+bool NothCurseTrigger::IsActive()
+{
+    if (!helper.UpdateBossAI())
+    {
+        return false;
+    }
+    if (bot->getClass() != CLASS_DRUID && bot->getClass() != CLASS_SHAMAN && bot->getClass() != CLASS_MAGE)
+    {
+        return false;
+    }
+    return helper.HasCurseInGroup();
+}
 
 bool ThaddiusPhasePetTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsPhasePet();
 }
 
 bool ThaddiusPhaseTransitionTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsPhaseTransition();
 }
 
 bool ThaddiusPhaseThaddiusTrigger::IsActive()
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     return helper.IsPhaseThaddius();
 }

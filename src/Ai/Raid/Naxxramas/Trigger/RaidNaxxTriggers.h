@@ -31,10 +31,7 @@ public:
 class AuraRemovedTrigger : public Trigger
 {
 public:
-    AuraRemovedTrigger(PlayerbotAI* botAI, std::string name) : Trigger(botAI, name, 1)
-    {
-        this->prev_check = false;
-    }
+    AuraRemovedTrigger(PlayerbotAI* botAI, std::string name) : Trigger(botAI, name, 1) { this->prev_check = false; }
     virtual bool IsActive() override;
 
 protected:
@@ -59,19 +56,26 @@ private:
     static constexpr uint32 CloudRotationDelayMs = 15000;
 };
 
-//class HeiganMeleeTrigger : public Trigger
-//{
-//public:
-//    HeiganMeleeTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan melee") {}
-//    virtual bool IsActive();
-//};
-//
-//class HeiganRangedTrigger : public Trigger
-//{
-//public:
-//    HeiganRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan ranged") {}
-//    bool IsActive() override;
-//};
+class HeiganMeleeTrigger : public Trigger
+{
+public:
+    HeiganMeleeTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan melee") {}
+    virtual bool IsActive();
+};
+
+class HeiganRangedTrigger : public Trigger
+{
+public:
+    HeiganRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan ranged") {}
+    bool IsActive() override;
+};
+
+class HeiganDecrepitFeverTrigger : public Trigger
+{
+public:
+    HeiganDecrepitFeverTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan decrepit fever") {}
+    bool IsActive() override;
+};
 
 class RazuviousTankTrigger : public Trigger
 {
@@ -117,6 +121,13 @@ public:
      bool IsActive() override;
  };
 
+class FaerlinaFrenzyTrigger : public Trigger
+{
+public:
+    FaerlinaFrenzyTrigger(PlayerbotAI* ai) : Trigger(ai, "faerlina frenzy") {}
+    bool IsActive() override;
+};
+
 class MaexxnaTrigger : public Trigger
 {
 public:
@@ -124,26 +135,54 @@ public:
     bool IsActive() override;
 };
 
-//class PatchwerkTankTrigger : public Trigger
-//{
-//public:
-//    PatchwerkTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk tank") {}
-//    bool IsActive() override;
-//};
-//
-//class PatchwerkNonTankTrigger : public Trigger
-//{
-//public:
-//    PatchwerkNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk non-tank") {}
-//    bool IsActive() override;
-//};
-//
-//class PatchwerkRangedTrigger : public Trigger
-//{
-//public:
-//    PatchwerkRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk ranged") {}
-//    bool IsActive() override;
-//};
+class MaexxnaWebWrapTrigger : public Trigger
+{
+public:
+    MaexxnaWebWrapTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna web wrap") {}
+    bool IsActive() override;
+};
+
+class MaexxnaSpiderlingsTrigger : public Trigger
+{
+public:
+    MaexxnaSpiderlingsTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna spiderlings") {}
+    bool IsActive() override;
+};
+
+class GothikMoveToAssignedSideTrigger : public Trigger
+{
+public:
+    GothikMoveToAssignedSideTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik move to assigned side") {}
+    bool IsActive() override;
+};
+
+class GothikChooseTargetTrigger : public Trigger
+{
+public:
+    GothikChooseTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik choose target") {}
+    bool IsActive() override;
+};
+
+class PatchwerkTankTrigger : public Trigger
+{
+public:
+    PatchwerkTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk tank") {}
+    bool IsActive() override;
+};
+
+class PatchwerkNonTankTrigger : public Trigger
+{
+public:
+    PatchwerkNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk non-tank") {}
+    bool IsActive() override;
+};
+
+class PatchwerkRangedTrigger : public Trigger
+{
+public:
+    PatchwerkRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk ranged") {}
+    bool IsActive() override;
+};
 
 class ThaddiusPhasePetTrigger : public Trigger
 {
@@ -186,24 +225,24 @@ private:
     ThaddiusBossHelper helper;
 };
 
-class FourHorsemenAttractorsTrigger : public Trigger
+class HorsemanAttractorsTrigger : public Trigger
 {
 public:
-    FourHorsemenAttractorsTrigger(PlayerbotAI* ai) : Trigger(ai, "four horsemen attractors"), helper(ai) {}
+    HorsemanAttractorsTrigger(PlayerbotAI* ai) : Trigger(ai, "fourhorsemen attractors"), helper(ai) {}
     bool IsActive() override;
 
 private:
-    FourHorsemenBossHelper helper;
+    FourhorsemanBossHelper helper;
 };
 
-class FourHorsemenExceptAttractorsTrigger : public Trigger
+class HorsemanExceptAttractorsTrigger : public Trigger
 {
 public:
-    FourHorsemenExceptAttractorsTrigger(PlayerbotAI* ai) : Trigger(ai, "four horsemen except attractors"), helper(ai) {}
+    HorsemanExceptAttractorsTrigger(PlayerbotAI* ai) : Trigger(ai, "fourhorsemen except attractors"), helper(ai) {}
     bool IsActive() override;
 
 private:
-    FourHorsemenBossHelper helper;
+    FourhorsemanBossHelper helper;
 };
 
 class SapphironGroundTrigger : public Trigger
@@ -239,7 +278,9 @@ private:
 class GluthMainTankMortalWoundTrigger : public Trigger
 {
 public:
-    GluthMainTankMortalWoundTrigger(PlayerbotAI* ai) : Trigger(ai, "gluth main tank mortal wound trigger"), helper(ai) {}
+    GluthMainTankMortalWoundTrigger(PlayerbotAI* ai) : Trigger(ai, "gluth main tank mortal wound trigger"), helper(ai)
+    {
+    }
     bool IsActive() override;
 
 private:
@@ -256,4 +297,23 @@ private:
     LoathebBossHelper helper;
 };
 
+class NothTrigger : public Trigger
+{
+public:
+    NothTrigger(PlayerbotAI* ai) : Trigger(ai, "noth"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    NothBossHelper helper;
+};
+
+class NothCurseTrigger : public Trigger
+{
+public:
+    NothCurseTrigger(PlayerbotAI* ai) : Trigger(ai, "noth curse"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    NothBossHelper helper;
+};
 #endif

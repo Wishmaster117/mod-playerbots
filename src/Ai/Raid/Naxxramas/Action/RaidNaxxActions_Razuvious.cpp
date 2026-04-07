@@ -5,18 +5,20 @@
 #include "Playerbots.h"
 #include "SharedDefines.h"
 
-bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
+bool RazuviousUseObedienceCrystalAction::Execute(Event event)
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     // bot->GetCharm
     if (Unit* charm = bot->GetCharm())
     {
         Unit* target = AI_VALUE2(Unit*, "find target", "instructor razuvious");
         if (!target)
+        {
             return false;
-
+        }
         if (charm->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == NULL_MOTION_TYPE)
         {
             charm->GetMotionMaster()->Clear();
@@ -31,11 +33,13 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
             duration_time = 60000;
         }
         else
+        {
             duration_time = 90000;
-
+        }
         if (!forceObedience)
+        {
             return false;
-
+        }
         if (charm->GetDistance(target) <= 0.51f)
         {
             // taunt
@@ -43,15 +47,18 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
             if (forceObedience->GetDuration() <= (duration_time - 5000))
             {
                 if (target->GetVictim() && botAI->HasAura(29061, target->GetVictim()))
+                {
                     tauntUseful = false;
-
+                }
                 if (forceObedience->GetDuration() <= 3000)
+                {
                     tauntUseful = false;
-
+                }
             }
             if (forceObedience->GetDuration() >= (duration_time - 500))
+            {
                 tauntUseful = false;
-
+            }
             if (tauntUseful && !charm->HasSpellCooldown(29060))
             {
                 // shield
@@ -81,21 +88,24 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
             {
                 Creature* unit = botAI->GetCreature(*i);
                 if (!unit)
+                {
                     continue;
-
+                }
                 if (botAI->IsMainTank(bot) && unit->GetSpawnId() != 128352)
+                {
                     continue;
-
+                }
                 if (!botAI->IsMainTank(bot) && unit->GetSpawnId() != 128353)
+                {
                     continue;
-
+                }
                 if (MoveTo(unit, 0.0f, MovementPriority::MOVEMENT_COMBAT))
+                {
                     return true;
-
+                }
                 Creature* creature = bot->GetNPCIfCanInteractWith(*i, UNIT_NPC_FLAG_SPELLCLICK);
                 if (!creature)
                     continue;
-
                 creature->HandleSpellClick(bot);
                 return true;
             }
@@ -118,30 +128,39 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
             if (target)
             {
                 if (bot->GetDistance2d(target) > sPlayerbotAIConfig.spellDistance)
+                {
                     return MoveNear(target, sPlayerbotAIConfig.spellDistance, MovementPriority::MOVEMENT_COMBAT);
+                }
                 else
+                {
                     return botAI->CastSpell("mind control", target);
+                }
             }
         }
     }
     return false;
 }
 
-bool RazuviousTargetAction::Execute(Event /*event*/)
+bool RazuviousTargetAction::Execute(Event event)
 {
     if (!helper.UpdateBossAI())
+    {
         return false;
-
+    }
     Unit* razuvious = AI_VALUE2(Unit*, "find target", "instructor razuvious");
     Unit* understudy = AI_VALUE2(Unit*, "find target", "death knight understudy");
     Unit* target = nullptr;
     if (botAI->IsTank(bot))
+    {
         target = understudy;
+    }
     else
+    {
         target = razuvious;
-
+    }
     if (AI_VALUE(Unit*, "current target") == target)
+    {
         return false;
-
+    }
     return Attack(target);
 }
