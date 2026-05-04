@@ -4563,7 +4563,8 @@ void PlayerbotFactory::InitGuild()
     }
     else
     {
-        if (guild->AddMember(bot->GetGUID(),urand(GR_OFFICER, GR_INITIATE)))
+        uint8 rank = PlayerbotGuildMgr::instance().GetRecommendedRank(bot, guild);
+        if (guild->AddMember(bot->GetGUID(), rank))
             PlayerbotGuildMgr::instance().OnGuildUpdate(guild);
         else
             LOG_ERROR("playerbots","Bot {} failed to join guild {}.", bot->GetName(), guildName);

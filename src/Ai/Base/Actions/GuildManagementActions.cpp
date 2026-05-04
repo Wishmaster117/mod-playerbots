@@ -7,6 +7,7 @@
 
 #include "GuildMgr.h"
 #include "GuildPackets.h"
+#include "PlayerbotGuildMgr.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 #include "BroadcastHelper.h"
@@ -149,9 +150,44 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
         // Promote or demote nearby members based on chance.
         if (player->GetGuildId() && player->GetGuildId() == bot->GetGuildId())
         {
-            uint32 dCount = AI_VALUE(uint32, "death count");
+            Guild::Member* playerMember = guild->GetMember(player->GetGUID());
+            if (!playerMember)
+                continue;
 
-            if (!urand(0, 30) && dCount < 2 && guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_PROMOTE)
+            uint8 currentRank = playerMember->GetRankId();
+
+            /*
+             * Never try to normalize the Guild Master rank.
+             * Rank 0 is reserved for the guild leader.
+             */
+            if (currentRank == 0)
+                continue;
+
+            uint8 recommendedRank = PlayerbotGuildMgr::instance().GetRecommendedRank(player, guild);
+            uint8 effectiveRecommended = (recommendedRank == GR_OFFICER) ? GR_VETERAN : recommendedRank;
+
+            /*
+             * Automatic guild management should not promote members up to Officer.
+             *
+             * In the default guild rank model, only the Guild Master can promote
+             * someone to Officer. Keeping Officer assignment limited to InitGuild()
+             * avoids failed promotion attempts and prevents officer rank inflation.
+             */
+
+            /*
+             * Lower rank id means higher guild rank.
+             *
+             * Example:
+             *   Officer  = 1
+             *   Veteran  = 2
+             *   Member   = 3
+             *   Initiate = 4
+             *
+             * If currentRank > recommendedRank, the member is too low-ranked
+             * and can be promoted one step by the existing guild promote action.
+             */
+            if (currentRank > effectiveRecommended && !urand(0, 15) &&
+                (guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_PROMOTE))
             {
                 BroadcastHelper::BroadcastGuildMemberPromotion(botAI, bot, player);
 
@@ -159,7 +195,8 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
                 continue;
             }
 
-            if (!urand(0, 30) && dCount > 2 && guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_DEMOTE)
+            if (currentRank < effectiveRecommended && !urand(0, 15) &&
+                (guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_DEMOTE))
             {
                 BroadcastHelper::BroadcastGuildMemberDemotion(botAI, bot, player);
 

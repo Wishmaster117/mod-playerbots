@@ -42,6 +42,50 @@ bool PlayerbotGuildMgr::CreateGuild(Player* player, std::string guildName)
     return true;
 }
 
+uint8 PlayerbotGuildMgr::GetRecommendedRank(Player* player, Guild* guild /*= nullptr*/) const
+{
+    if (!player)
+        return GR_INITIATE;
+
+    uint8 level = player->GetLevel();
+
+    /*
+     * Guild rank policy for random bots.
+     *
+     * Lower rank id means higher rank:
+     *   0 = Guild Master
+     *   1 = Officer
+     *   2 = Veteran
+     *   3 = Member
+     *   4 = Initiate
+     *
+     * This function never returns Guild Master.
+     * Guild Master remains assigned only by guild creation.
+     */
+
+    if (level < 20)
+        return GR_INITIATE;
+
+    if (level < 40)
+        return GR_MEMBER;
+
+    /*
+     * High-level bots normally become Veteran.
+     *
+     * Officer is intentionally rare:
+     *   - level 58+
+     *   - guild has at least 8 members
+     *   - deterministic 10% eligibility based on GUID
+     *
+     * GetMemberSize() is used here because this is a live guild-size decision,
+     * and the surrounding guild management code already uses GetMemberSize().
+     */
+    if (level >= 58 && guild && guild->GetMemberSize() >= 8 && (player->GetGUID().GetCounter() % 10) == 0)
+        return GR_OFFICER;
+
+    return GR_VETERAN;
+}
+
 bool PlayerbotGuildMgr::SetGuildEmblem(uint32 guildId)
 {
     Guild* guild = sGuildMgr->GetGuildById(guildId);

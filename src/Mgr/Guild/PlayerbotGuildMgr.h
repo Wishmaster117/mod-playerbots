@@ -24,6 +24,7 @@ public:
     void OnGuildUpdate  (Guild* guild);
     bool SetGuildEmblem(uint32 guildId);
     void DeleteBotGuilds();
+    uint8 GetRecommendedRank(Player* player, Guild* guild = nullptr) const;
     bool IsRealGuild(uint32 guildId);
     bool IsRealGuild(Player* bot);
 
