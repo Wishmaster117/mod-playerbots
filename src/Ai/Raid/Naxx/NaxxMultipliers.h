@@ -19,14 +19,23 @@ public:
     virtual float GetValue(Action* action);
 };
 
-//class HeiganDanceMultiplier : public Multiplier
-//{
-//public:
-//    HeiganDanceMultiplier(PlayerbotAI* ai) : Multiplier(ai, "helgan dance") {}
-//
-//public:
-//    virtual float GetValue(Action* action);
-//};
+class HeiganDanceMultiplier : public Multiplier
+{
+public:
+    HeiganDanceMultiplier(PlayerbotAI* ai) : Multiplier(ai, "heigan dance")
+    {
+        initialized = false;
+        platformPhase = false;
+        phaseStartMs = 0;
+    }
+
+    float GetValue(Action* action) override;
+
+private:
+    bool initialized;
+    bool platformPhase;
+    uint32 phaseStartMs;
+};
 
 class LoathebGenericMultiplier : public Multiplier
 {
@@ -98,14 +107,12 @@ public:
     virtual float GetValue(Action* action);
 };
 
-// class GothikGenericMultiplier : public Multiplier
-// {
-// public:
-//     GothikGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "gothik generic") {}
-
-// public:
-//     virtual float GetValue(Action* action);
-// };
+class GothikGenericMultiplier : public Multiplier
+{
+public:
+    GothikGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "gothik generic") {}
+    float GetValue(Action* action) override;
+};
 
 class GluthGenericMultiplier : public Multiplier
 {
@@ -115,6 +122,16 @@ public:
 
 private:
     GluthBossHelper helper;
+};
+
+class NothGenericMultiplier : public Multiplier
+{
+public:
+    NothGenericMultiplier(PlayerbotAI* ai) : Multiplier(ai, "noth generic"), helper(ai) {}
+    float GetValue(Action* action) override;
+
+private:
+    NothBossHelper helper;
 };
 
 #endif

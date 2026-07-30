@@ -12,50 +12,79 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     // Grobbulus
     triggers.push_back(new TriggerNode("mutating injection melee",
-        { NextAction("grobbulus move away", ACTION_RAID + 2) }
+        { NextAction("grobbulus move away", ACTION_RAID + 8) }
     ));
 
     triggers.push_back(new TriggerNode("mutating injection ranged",
-        { NextAction("grobbulus go behind the boss", ACTION_RAID + 2) }
+        { NextAction("grobbulus go behind the boss", ACTION_RAID + 8) }
     ));
 
     triggers.push_back(new TriggerNode("mutating injection removed",
-        { NextAction("grobbulus move center", ACTION_RAID + 1) }
+        { NextAction("grobbulus position", ACTION_RAID + 7) }
     ));
 
     triggers.push_back(new TriggerNode("grobbulus cloud",
-        { NextAction("rotate grobbulus", ACTION_RAID + 1) }
+        { NextAction("rotate grobbulus", ACTION_RAID + 9) }
+    ));
+
+    triggers.push_back(new TriggerNode("grobbulus",
+        {
+            NextAction("grobbulus position", ACTION_RAID + 3),
+            NextAction("grobbulus choose target", ACTION_RAID + 2)
+        }
     ));
 
     // Heigan the Unclean
-    //triggers.push_back(new TriggerNode("heigan melee",
-    //    { NextAction("heigan dance melee", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("heigan melee",
+        { NextAction("heigan dance melee", ACTION_RAID + 4) }
+    ));
 
-    //triggers.push_back(new TriggerNode("heigan ranged",
-    //    { NextAction("heigan dance ranged", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("heigan ranged",
+        { NextAction("heigan dance ranged", ACTION_RAID + 4) }
+    ));
+
+    triggers.push_back(new TriggerNode("heigan decrepit fever",
+        { NextAction("heigan dispel decrepit fever", ACTION_RAID + 5) }
+    ));
 
     // Kel'Thuzad
     triggers.push_back(
         new TriggerNode("kel'thuzad",
         {
-            NextAction("kel'thuzad position", ACTION_RAID + 2),
-            NextAction("kel'thuzad choose target", ACTION_RAID + 1)
+            NextAction("kel'thuzad position", ACTION_RAID + 5),
+            NextAction("kel'thuzad choose target", ACTION_RAID + 3)
         })
     );
 
     // Anub'Rekhan
     triggers.push_back(new TriggerNode("anub'rekhan",
-        { NextAction("anub'rekhan position", ACTION_RAID + 1) }
+        {
+            NextAction("anub'rekhan position", ACTION_RAID + 2),
+            NextAction("anub'rekhan choose target", ACTION_RAID + 1)
+        }
     ));
 
-     // Grand Widow Faerlina
-     triggers.push_back(new TriggerNode("faerlina",
+    // Grand Widow Faerlina
+    triggers.push_back(new TriggerNode("faerlina",
         { NextAction("avoid aoe", ACTION_RAID + 1) }
     ));
 
+    triggers.push_back(new TriggerNode("faerlina frenzy",
+        {
+            NextAction("tranquilizing shot", ACTION_RAID + 4),
+            NextAction("faerlina sacrifice worshipper", ACTION_RAID + 3)
+        }
+    ));
+
     // Maexxna
+    triggers.push_back(new TriggerNode("maexxna web wrap",
+        { NextAction("maexxna attack web wrap", ACTION_RAID + 5) }
+    ));
+
+    triggers.push_back(new TriggerNode("maexxna spiderlings",
+        { NextAction("maexxna tank spiderlings", ACTION_RAID + 2) }
+    ));
+
     triggers.push_back(
         new TriggerNode("maexxna",
         {
@@ -64,70 +93,95 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         })
     );
 
+    // Gothik the Harvester
+    triggers.push_back(new TriggerNode("gothik move to assigned side",
+        { NextAction("gothik move to assigned side", ACTION_RAID + 4) }
+    ));
+    triggers.push_back(new TriggerNode("gothik choose target",
+        { NextAction("gothik choose target", ACTION_RAID + 2) }
+    ));
+
+    // Noth the Plaguebringer
+    triggers.push_back(new TriggerNode("noth",
+        {
+            NextAction("noth position", ACTION_RAID + 2),
+            NextAction("noth choose target", ACTION_RAID + 1)
+        }
+    ));
+    triggers.push_back(new TriggerNode("noth curse",
+        { NextAction("cure party member", ACTION_RAID + 5) }
+    ));
+
     // Patchwerk
-    //triggers.push_back(new TriggerNode("patchwerk tank",
-    //    { NextAction("tank face", ACTION_RAID + 2) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk tank",
+        { NextAction("tank face", ACTION_RAID + 2) }
+    ));
 
-    //triggers.push_back(new TriggerNode("patchwerk ranged",
-    //    { NextAction("patchwerk ranged position", ACTION_RAID + 2) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk ranged",
+        { NextAction("patchwerk ranged position", ACTION_RAID + 2) }
+    ));
 
-    //triggers.push_back(new TriggerNode("patchwerk non-tank",
-    //    { NextAction("rear flank", ACTION_RAID + 1) }
-    //));
+    triggers.push_back(new TriggerNode("patchwerk non-tank",
+        { NextAction("rear flank", ACTION_RAID + 1) }
+    ));
 
     // Thaddius
     triggers.push_back(new TriggerNode("thaddius phase pet",
-        { NextAction("thaddius attack nearest pet", ACTION_RAID + 1) }
+        { NextAction("thaddius attack nearest pet", ACTION_RAID + 6) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase pet lose aggro",
-        { NextAction("taunt spell", ACTION_RAID + 2) }
+        { NextAction("taunt spell", ACTION_RAID + 7) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase transition",
-        { NextAction("thaddius move to platform", ACTION_RAID + 1) }
+        { NextAction("thaddius move to platform", ACTION_RAID + 5) }
     ));
 
     triggers.push_back(new TriggerNode("thaddius phase thaddius",
-        { NextAction("thaddius move polarity", ACTION_RAID + 1) }
+        { NextAction("thaddius move polarity", ACTION_RAID + 5) }
     ));
 
     // Instructor Razuvious
     triggers.push_back(new TriggerNode("razuvious tank",
-        { NextAction("razuvious use obedience crystal", ACTION_RAID + 1) }
+        { NextAction("razuvious use obedience crystal", ACTION_RAID + 5) }
     ));
 
     triggers.push_back(new TriggerNode("razuvious nontank",
-        { NextAction("razuvious target", ACTION_RAID + 1) }
+        { NextAction("razuvious target", ACTION_RAID + 2) }
     ));
 
     // four horsemen
     triggers.push_back(new TriggerNode("four horsemen attractors",
-        { NextAction("four horsemen attract alternatively", ACTION_RAID + 1) }
+        { NextAction("four horsemen attract alternatively", ACTION_RAID + 5) }
     ));
 
     triggers.push_back(new TriggerNode("four horsemen except attractors",
-        { NextAction("four horsemen attack in order", ACTION_RAID + 1) }
+        { NextAction("four horsemen attack in order", ACTION_RAID + 2) }
     ));
 
     // sapphiron
     triggers.push_back(new TriggerNode("sapphiron ground",
-        { NextAction("sapphiron ground position", ACTION_RAID + 1) }
+        {
+            NextAction("cure party member", ACTION_RAID + 6),
+            NextAction("sapphiron ground position", ACTION_RAID + 4)
+        }
     ));
 
     triggers.push_back(new TriggerNode("sapphiron flight",
-        { NextAction("sapphiron flight position", ACTION_RAID + 1) }
+        {
+            NextAction("sapphiron flight position", ACTION_RAID + 8),
+            NextAction("cure party member", ACTION_RAID + 6)
+        }
     ));
 
     // Gluth
     triggers.push_back(
         new TriggerNode("gluth",
         {
-            NextAction("gluth choose target", ACTION_RAID + 1),
-            NextAction("gluth position", ACTION_RAID + 1),
-            NextAction("gluth slowdown", ACTION_RAID)
+            NextAction("gluth choose target", ACTION_RAID + 3),
+            NextAction("gluth position", ACTION_RAID + 2),
+            NextAction("gluth slowdown", ACTION_RAID + 1)
         })
     );
 
@@ -139,8 +193,8 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode("loatheb",
         {
-            NextAction("loatheb position", ACTION_RAID + 1),
-            NextAction("loatheb choose target", ACTION_RAID + 1)
+            NextAction("loatheb choose target", ACTION_RAID + 3),
+            NextAction("loatheb position", ACTION_RAID + 2)
         })
     );
 
@@ -149,7 +203,7 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
 {
     multipliers.push_back(new GrobbulusMultiplier(botAI));
-    //multipliers.push_back(new HeiganDanceMultiplier(botAI));
+    multipliers.push_back(new HeiganDanceMultiplier(botAI));
     multipliers.push_back(new LoathebGenericMultiplier(botAI));
     multipliers.push_back(new ThaddiusGenericMultiplier(botAI));
     multipliers.push_back(new SapphironGenericMultiplier(botAI));
@@ -157,6 +211,7 @@ void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
     multipliers.push_back(new KelthuzadGenericMultiplier(botAI));
     multipliers.push_back(new AnubrekhanGenericMultiplier(botAI));
     multipliers.push_back(new FourHorsemenGenericMultiplier(botAI));
-    // multipliers.push_back(new GothikGenericMultiplier(botAI));
+    multipliers.push_back(new GothikGenericMultiplier(botAI));
     multipliers.push_back(new GluthGenericMultiplier(botAI));
+    multipliers.push_back(new NothGenericMultiplier(botAI));
 }

@@ -6,6 +6,9 @@
 
 #include "NaxxActions.h"
 
+#include <algorithm>
+#include <vector>
+
 #include "ObjectGuid.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
@@ -116,25 +119,41 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
         }
         else
         {
-            GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
-            Unit* target = nullptr;
-            for (auto i = attackers.begin(); i != attackers.end(); ++i)
+            GuidVector const attackers = AI_VALUE(GuidVector, "attackers");
+            std::vector<Unit*> understudies;
+            for (ObjectGuid const& guid : attackers)
             {
-                Unit* unit = botAI->GetUnit(*i);
-                if (!unit)
-                    continue;
-                if (botAI->EqualLowercaseName(unit->GetName(), "death knight understudy"))
+                Unit* unit = botAI->GetUnit(guid);
+                if (unit && unit->IsAlive() && botAI->EqualLowercaseName(unit->GetName(), "death knight understudy"))
+                    understudies.push_back(unit);
+            }
+
+            std::sort(understudies.begin(), understudies.end(), [](Unit const* left, Unit const* right)
+            {
+                return left->GetGUID().GetRawValue() < right->GetGUID().GetRawValue();
+            });
+
+            int32 priestIndex = botAI->GetClassIndex(bot, CLASS_PRIEST);
+            if (priestIndex < 0)
+                priestIndex = 0;
+
+            Unit* target = nullptr;
+            for (size_t offset = 0; offset < understudies.size(); ++offset)
+            {
+                Unit* candidate = understudies[(static_cast<size_t>(priestIndex) + offset) % understudies.size()];
+                if (!candidate->IsCharmed())
                 {
-                    target = unit;
+                    target = candidate;
                     break;
                 }
             }
+
             if (target)
             {
                 if (bot->GetDistance2d(target) > sPlayerbotAIConfig.spellDistance)
                     return MoveNear(target, sPlayerbotAIConfig.spellDistance, MovementPriority::MOVEMENT_COMBAT);
-                else
-                    return botAI->CastSpell("mind control", target);
+
+                return botAI->CastSpell("mind control", target);
             }
         }
     }
@@ -146,15 +165,8 @@ bool RazuviousTargetAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    Unit* razuvious = AI_VALUE2(Unit*, "find target", "instructor razuvious");
-    Unit* understudy = AI_VALUE2(Unit*, "find target", "death knight understudy");
-    Unit* target = nullptr;
-    if (botAI->IsTank(bot))
-        target = understudy;
-    else
-        target = razuvious;
-
-    if (AI_VALUE(Unit*, "current target") == target)
+    Unit* target = AI_VALUE2(Unit*, "find target", "instructor razuvious");
+    if (!target || AI_VALUE(Unit*, "current target") == target)
         return false;
 
     return Attack(target);

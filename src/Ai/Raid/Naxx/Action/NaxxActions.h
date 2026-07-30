@@ -15,103 +15,149 @@
 #include "Playerbots.h"
 #include "NaxxBossHelper.h"
 
-class GrobbulusGoBehindAction : public MovementAction
+class GrobbulusInjectionPositionAction : public MovementAction
 {
 public:
-    GrobbulusGoBehindAction(PlayerbotAI* ai, float distance = 24.0f, float delta_angle = M_PI / 8)
-        : MovementAction(ai, "grobbulus go behind")
-    {
-        this->distance = distance;
-        this->delta_angle = delta_angle;
-    }
-    virtual bool Execute(Event event);
+    GrobbulusInjectionPositionAction(PlayerbotAI* ai, std::string const& name) : MovementAction(ai, name) {}
 
 protected:
-    float distance, delta_angle;
+    bool MoveToSafeDropPosition();
+};
+
+class GrobbulusGoBehindAction : public GrobbulusInjectionPositionAction
+{
+public:
+    GrobbulusGoBehindAction(PlayerbotAI* ai, float /*distance*/ = 24.0f, float /*deltaAngle*/ = M_PI / 8)
+        : GrobbulusInjectionPositionAction(ai, "grobbulus go behind")
+    {
+    }
+
+    bool Execute(Event event) override;
 };
 
 class GrobbulusRotateAction : public RotateAroundTheCenterPointAction
 {
 public:
     GrobbulusRotateAction(PlayerbotAI* botAI)
-        : RotateAroundTheCenterPointAction(botAI, "rotate grobbulus", 3281.23f, -3310.38f, 35.0f, 8, true, M_PI) {}
-    virtual bool isUseful() override
+        : RotateAroundTheCenterPointAction(botAI, "rotate grobbulus", 3281.23f, -3310.38f, 35.0f, 8, true, M_PI)
+    {
+    }
+
+    bool isUseful() override
     {
         return RotateAroundTheCenterPointAction::isUseful() && botAI->IsMainTank(bot) &&
                AI_VALUE2(bool, "has aggro", "boss target");
     }
+
     uint32 GetCurrWaypoint() override;
 };
 
-class GrobbulusMoveCenterAction : public MoveInsideAction
+class GrobbulusMoveAwayAction : public GrobbulusInjectionPositionAction
 {
 public:
-    GrobbulusMoveCenterAction(PlayerbotAI* ai) : MoveInsideAction(ai, 3281.23f, -3310.38f, 5.0f) {}
-};
-
-class GrobbulusMoveAwayAction : public MovementAction
-{
-public:
-    GrobbulusMoveAwayAction(PlayerbotAI* ai, float distance = 18.0f)
-        : MovementAction(ai, "grobbulus move away"), distance(distance)
+    GrobbulusMoveAwayAction(PlayerbotAI* ai, float /*distance*/ = 18.0f)
+        : GrobbulusInjectionPositionAction(ai, "grobbulus move away")
     {
     }
-    bool Execute(Event event) override;
 
-private:
-    float distance;
+    bool Execute(Event event) override;
 };
 
-//class HeiganDanceAction : public MovementAction
-//{
-//public:
-//    HeiganDanceAction(PlayerbotAI* ai) : MovementAction(ai, "heigan dance")
-//    {
-//        this->last_eruption_ms = 0;
-//        this->platform_phase = false;
-//        ResetSafe();
-//        waypoints.push_back(std::make_pair(2794.88f, -3668.12f));
-//        waypoints.push_back(std::make_pair(2775.49f, -3674.43f));
-//        waypoints.push_back(std::make_pair(2762.30f, -3684.59f));
-//        waypoints.push_back(std::make_pair(2755.99f, -3703.96f));
-//        platform = std::make_pair(2794.26f, -3706.67f);
-//    }
-//
-//protected:
-//    bool CalculateSafe();
-//    void ResetSafe()
-//    {
-//        curr_safe = 0;
-//        curr_dir = 1;
-//    }
-//    void NextSafe()
-//    {
-//        curr_safe += curr_dir;
-//        if (curr_safe == 3 || curr_safe == 0)
-//        {
-//            curr_dir = -curr_dir;
-//        }
-//    }
-//    uint32 last_eruption_ms;
-//    bool platform_phase;
-//    uint32 curr_safe, curr_dir;
-//    std::vector<std::pair<float, float>> waypoints;
-//    std::pair<float, float> platform;
-//};
-//
-//class HeiganDanceMeleeAction : public HeiganDanceAction
-//{
-//public:
-//    HeiganDanceMeleeAction(PlayerbotAI* ai) : HeiganDanceAction(ai) {}
-//    virtual bool Execute(Event event);
-//};
-//
-//class HeiganDanceRangedAction : public HeiganDanceAction
-//{
-//public:
-//    HeiganDanceRangedAction(PlayerbotAI* ai) : HeiganDanceAction(ai) {}
-//    virtual bool Execute(Event event);
-//};
+class GrobbulusPositionAction : public MovementAction
+{
+public:
+    GrobbulusPositionAction(PlayerbotAI* ai) : MovementAction(ai, "grobbulus position") {}
+
+    bool Execute(Event event) override;
+};
+
+class GrobbulusChooseTargetAction : public AttackAction
+{
+public:
+    GrobbulusChooseTargetAction(PlayerbotAI* ai) : AttackAction(ai, "grobbulus choose target") {}
+
+    bool Execute(Event event) override;
+};
+
+class HeiganDanceAction : public MovementAction
+{
+public:
+    HeiganDanceAction(PlayerbotAI* ai) : MovementAction(ai, "heigan dance")
+    {
+        initialized = false;
+        platformPhase = false;
+        phaseStartMs = 0;
+        processedEruptions = 0;
+        currentSafeSection = 3;
+        direction = -1;
+
+        platformZ = 276.54f;
+        arenaZ = 264.00f;
+
+        // The indices intentionally match the eruption section numbers used by AzerothCore.
+        waypoints.push_back(std::make_pair(2755.99f, -3703.96f));  // section 0
+        waypoints.push_back(std::make_pair(2762.30f, -3684.59f));  // section 1
+        waypoints.push_back(std::make_pair(2775.49f, -3674.43f));  // section 2
+        waypoints.push_back(std::make_pair(2794.88f, -3668.12f));  // section 3
+        platform = std::make_pair(2794.26f, -3706.67f);
+    }
+
+protected:
+    bool UpdateDanceState();
+    bool IsPlatformPhase(Unit* boss) const;
+    void ResetPhase(bool nextPlatformPhase, uint32 now);
+    void AdvanceSafeSection();
+
+    bool initialized;
+    bool platformPhase;
+    uint32 phaseStartMs;
+    uint32 processedEruptions;
+    uint8 currentSafeSection;
+    int32 direction;
+    float platformZ;
+    float arenaZ;
+    std::vector<std::pair<float, float>> waypoints;
+    std::pair<float, float> platform;
+};
+
+class HeiganDanceMeleeAction : public HeiganDanceAction
+{
+public:
+    HeiganDanceMeleeAction(PlayerbotAI* ai) : HeiganDanceAction(ai) {}
+    bool Execute(Event event) override;
+};
+
+class HeiganDanceRangedAction : public HeiganDanceAction
+{
+public:
+    HeiganDanceRangedAction(PlayerbotAI* ai) : HeiganDanceAction(ai) {}
+    bool Execute(Event event) override;
+};
+
+class HeiganDispelDecrepitFeverAction : public Action
+{
+public:
+    HeiganDispelDecrepitFeverAction(PlayerbotAI* ai) : Action(ai, "heigan dispel decrepit fever") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+
+private:
+    Unit* FindTarget() const;
+    bool IsDiseaseDispeller() const;
+};
+
+class FaerlinaSacrificeWorshipperAction : public AttackAction
+{
+public:
+    FaerlinaSacrificeWorshipperAction(PlayerbotAI* ai) : AttackAction(ai, "faerlina sacrifice worshipper") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+
+private:
+    Unit* FindTarget();
+};
 
 class ThaddiusAttackNearestPetAction : public AttackAction
 {
@@ -123,22 +169,6 @@ public:
 private:
     ThaddiusBossHelper helper;
 };
-
-// class ThaddiusMeleeToPlaceAction : public MovementAction
-// {
-// public:
-//     ThaddiusMeleeToPlaceAction(PlayerbotAI* ai) : MovementAction(ai, "thaddius melee to place") {}
-//     virtual bool Execute(Event event);
-//     virtual bool isUseful();
-// };
-
-// class ThaddiusRangedToPlaceAction : public MovementAction
-// {
-// public:
-//     ThaddiusRangedToPlaceAction(PlayerbotAI* ai) : MovementAction(ai, "thaddius ranged to place") {}
-//     virtual bool Execute(Event event);
-//     virtual bool isUseful();
-// };
 
 class ThaddiusMoveToPlatformAction : public MovementAction
 {
@@ -322,11 +352,67 @@ private:
     LoathebBossHelper helper;
 };
 
-//class PatchwerkRangedPositionAction : public MovementAction
-//{
-//public:
-//    PatchwerkRangedPositionAction(PlayerbotAI* ai) : MovementAction(ai, "patchwerk ranged position") {}
-//    bool Execute(Event event) override;
-//};
+class GothikMoveToAssignedSideAction : public MovementAction
+{
+public:
+    GothikMoveToAssignedSideAction(PlayerbotAI* ai) : MovementAction(ai, "gothik move to assigned side") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class GothikChooseTargetAction : public AttackAction
+{
+public:
+    GothikChooseTargetAction(PlayerbotAI* ai) : AttackAction(ai, "gothik choose target") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class NothChooseTargetAction : public AttackAction
+{
+public:
+    NothChooseTargetAction(PlayerbotAI* ai) : AttackAction(ai, "noth choose target"), helper(ai) {}
+    bool Execute(Event event) override;
+
+private:
+    NothBossHelper helper;
+};
+
+class NothPositionAction : public MovementAction
+{
+public:
+    NothPositionAction(PlayerbotAI* ai) : MovementAction(ai, "noth position"), helper(ai) {}
+    bool Execute(Event event) override;
+
+private:
+    NothBossHelper helper;
+};
+
+class MaexxnaAttackWebWrapAction : public AttackAction
+{
+public:
+    MaexxnaAttackWebWrapAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna attack web wrap") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class MaexxnaTankSpiderlingsAction : public AttackAction
+{
+public:
+    MaexxnaTankSpiderlingsAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna tank spiderlings") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class PatchwerkRangedPositionAction : public MovementAction
+{
+public:
+    PatchwerkRangedPositionAction(PlayerbotAI* ai) : MovementAction(ai, "patchwerk ranged position") {}
+    bool Execute(Event event) override;
+};
 
 #endif

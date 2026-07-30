@@ -15,76 +15,90 @@ bool GluthChooseTargetAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    GuidVector attackers = context->GetValue<GuidVector>("possible targets")->Get();
+    GuidVector const candidates = context->GetValue<GuidVector>("possible targets")->Get();
+    Unit* boss = helper.GetBoss();
     Unit* target = nullptr;
-    Unit* target_boss = nullptr;
-    std::vector<Unit*> target_zombies;
-    for (GuidVector::iterator i = attackers.begin(); i != attackers.end(); ++i)
+    std::vector<Unit*> zombies;
+
+    for (ObjectGuid const& guid : candidates)
     {
-        Unit* unit = botAI->GetUnit(*i);
-        if (!unit)
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
             continue;
 
-        if (!unit->IsAlive())
-            continue;
-
-        if (botAI->EqualLowercaseName(unit->GetName(), "zombie chow"))
-            target_zombies.push_back(unit);
-
-        if (botAI->EqualLowercaseName(unit->GetName(), "gluth"))
-            target_boss = unit;
+        if (helper.IsZombieChow(unit))
+            zombies.push_back(unit);
+        else if (botAI->EqualLowercaseName(unit->GetName(), "gluth"))
+            boss = unit;
     }
-    if (botAI->IsMainTank(bot) || botAI->IsAssistTankOfIndex(bot, 0))
-        target = target_boss;
-    else if (botAI->IsAssistTankOfIndex(bot, 1))
+
+    bool const bossTank = botAI->IsMainTank(bot) || botAI->IsAssistTankOfIndex(bot, 0);
+    bool const zombieKiter = helper.IsZombieKiter(bot);
+    bool const slowdownHunter = helper.IsSlowdownHunter(bot);
+
+    if (bossTank)
     {
-        for (Unit* t : target_zombies)
-        {
-            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() != bot && t->GetDistance2d(bot) <= 10.0f)
-            {
-                if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
-                    target = t;
-            }
-        }
+        target = boss;
     }
-    else if (botAI->GetClassIndex(bot, CLASS_HUNTER) == 0 || botAI->GetClassIndex(bot, CLASS_HUNTER) == 1)
+    else if (zombieKiter)
     {
-        // prevent zombie go straight to gluth
-        for (Unit* t : target_zombies)
+        for (Unit* zombie : zombies)
         {
-            if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() == target_boss &&
-                t->GetDistance2d(bot) <= sPlayerbotAIConfig.spellDistance)
-            {
-                if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
-                    target = t;
-            }
+            if (zombie->GetHealthPct() <= helper.decimatedZombiePct)
+                continue;
+
+            bool const loose = !zombie->GetVictim() || zombie->GetVictim() != bot;
+            if (!target || (loose && target->GetVictim() == bot) || bot->GetDistance2d(zombie) < bot->GetDistance2d(target))
+                target = zombie;
         }
+
         if (!target)
-            target = target_boss;
+            target = boss;
+    }
+    else if (slowdownHunter)
+    {
+        for (Unit* zombie : zombies)
+        {
+            if (zombie->GetHealthPct() <= helper.decimatedZombiePct)
+                continue;
+
+            bool const headingToBoss = boss && zombie->GetVictim() == boss;
+            bool const nearBoss = boss && zombie->GetDistance2d(boss) <= 30.0f;
+            if (!headingToBoss && !nearBoss)
+                continue;
+
+            if (!target || bot->GetDistance2d(zombie) < bot->GetDistance2d(target))
+                target = zombie;
+        }
+
+        if (!target)
+            target = boss;
     }
     else
     {
-        for (Unit* t : target_zombies)
+        std::pair<float, float> const tankPosition =
+            bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ? helper.mainTankPos25 : helper.mainTankPos10;
+
+        for (Unit* zombie : zombies)
         {
-            if (t->GetHealthPct() <= helper.decimatedZombiePct)
+            if (zombie->GetHealthPct() > helper.decimatedZombiePct)
+                continue;
+
+            if (!target || zombie->GetDistance2d(tankPosition.first, tankPosition.second) <
+                               target->GetDistance2d(tankPosition.first, tankPosition.second))
             {
-                if (target == nullptr ||
-                    target->GetDistance2d(helper.mainTankPos25.first, helper.mainTankPos25.second) >
-                        t->GetDistance2d(helper.mainTankPos25.first, helper.mainTankPos25.second))
-                    target = t;
+                target = zombie;
             }
         }
-        if (target == nullptr)
-            target = target_boss;
+
+        if (!target)
+            target = boss;
     }
-    if (!target || context->GetValue<Unit*>("current target")->Get() == target)
+
+    if (!target || AI_VALUE(Unit*, "current target") == target)
         return false;
 
-    if (target_boss && target == target_boss)
-        return Attack(target, true);
-
-    return Attack(target, false);
-    // return Attack(target);
+    return Attack(target, target == boss);
 }
 
 bool GluthPositionAction::Execute(Event /*event*/)
@@ -92,93 +106,77 @@ bool GluthPositionAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+    bool const raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
     if (botAI->IsMainTank(bot) || botAI->IsAssistTankOfIndex(bot, 0))
     {
-        if (AI_VALUE2(bool, "has aggro", "boss target"))
+        if (!AI_VALUE2(bool, "has aggro", "boss target"))
+            return false;
+
+        std::pair<float, float> const position = raid25 ? helper.mainTankPos25 : helper.mainTankPos10;
+        if (MoveTo(NAXX_MAP_ID, position.first, position.second, bot->GetPositionZ(), false, false, false, false,
+                   MovementPriority::MOVEMENT_COMBAT))
         {
-            if (raid25)
-            {
-                if (MoveTo(NAXX_MAP_ID, helper.mainTankPos25.first, helper.mainTankPos25.second, bot->GetPositionZ(), false, false, false,
-                           false, MovementPriority::MOVEMENT_COMBAT))
-                    return true;
-
-                return MoveInside(NAXX_MAP_ID, helper.mainTankPos25.first, helper.mainTankPos25.second, bot->GetPositionZ(), 2.0f,
-                                  MovementPriority::MOVEMENT_COMBAT);
-            }
-            else
-            {
-                if (MoveTo(NAXX_MAP_ID, helper.mainTankPos10.first, helper.mainTankPos10.second, bot->GetPositionZ(), false, false, false,
-                           false, MovementPriority::MOVEMENT_COMBAT))
-                    return true;
-
-                return MoveInside(NAXX_MAP_ID, helper.mainTankPos10.first, helper.mainTankPos10.second, bot->GetPositionZ(), 2.0f,
-                                  MovementPriority::MOVEMENT_COMBAT);
-            }
+            return true;
         }
+
+        return MoveInside(NAXX_MAP_ID, position.first, position.second, bot->GetPositionZ(), 2.0f,
+                          MovementPriority::MOVEMENT_COMBAT);
     }
-    else if (botAI->IsAssistTankOfIndex(bot, 1))
+
+    if (helper.IsZombieKiter(bot))
     {
         if (helper.BeforeDecimate())
         {
-            if (MoveTo(bot->GetMapId(), helper.beforeDecimatePos.first, helper.beforeDecimatePos.second, bot->GetPositionZ(), false, false,
-                       false, false, MovementPriority::MOVEMENT_COMBAT))
-                return true;
-
-            return MoveInside(bot->GetMapId(), helper.beforeDecimatePos.first, helper.beforeDecimatePos.second, bot->GetPositionZ(), 2.0f,
-                              MovementPriority::MOVEMENT_COMBAT);
-        }
-        else
-        {
-            if (AI_VALUE2(bool, "has aggro", "current target"))
+            if (MoveTo(NAXX_MAP_ID, helper.beforeDecimatePos.first, helper.beforeDecimatePos.second, bot->GetPositionZ(), false,
+                       false, false, false, MovementPriority::MOVEMENT_COMBAT))
             {
-                uint32 nearest = FindNearestWaypoint();
-                uint32 next_point = (nearest + 1) % intervals;
-                return MoveTo(bot->GetMapId(), waypoints[next_point].first, waypoints[next_point].second, bot->GetPositionZ(),
-                              false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+                return true;
             }
+
+            return MoveInside(NAXX_MAP_ID, helper.beforeDecimatePos.first, helper.beforeDecimatePos.second, bot->GetPositionZ(),
+                              2.0f, MovementPriority::MOVEMENT_COMBAT);
+        }
+
+        Unit* target = AI_VALUE(Unit*, "current target");
+        if (helper.IsZombieChow(target) && AI_VALUE2(bool, "has aggro", "current target"))
+        {
+            uint32 const nearest = FindNearestWaypoint();
+            uint32 const nextPoint = (nearest + 1) % intervals;
+            return MoveTo(NAXX_MAP_ID, waypoints[nextPoint].first, waypoints[nextPoint].second, bot->GetPositionZ(), false, false,
+                          false, false, MovementPriority::MOVEMENT_COMBAT);
         }
     }
-    else if (botAI->IsRangedDps(bot))
-    {
-        if (raid25)
-        {
-            if (botAI->GetClassIndex(bot, CLASS_HUNTER) == 0)
-                return MoveInside(NAXX_MAP_ID, helper.leftSlowDownPos.first, helper.leftSlowDownPos.second, bot->GetPositionZ(), 0.0f,
-                                  MovementPriority::MOVEMENT_COMBAT);
 
-            if (botAI->GetClassIndex(bot, CLASS_HUNTER) == 1)
-                return MoveInside(NAXX_MAP_ID, helper.rightSlowDownPos.first, helper.rightSlowDownPos.second, bot->GetPositionZ(), 0.0f,
-                                  MovementPriority::MOVEMENT_COMBAT);
+    if (botAI->IsRangedDps(bot))
+    {
+        if (helper.IsSlowdownHunter(bot))
+        {
+            std::pair<float, float> const slowdownPosition =
+                botAI->GetClassIndex(bot, CLASS_HUNTER) == 0 ? helper.leftSlowDownPos : helper.rightSlowDownPos;
+            return MoveInside(NAXX_MAP_ID, slowdownPosition.first, slowdownPosition.second, bot->GetPositionZ(), 1.0f,
+                              MovementPriority::MOVEMENT_COMBAT);
         }
+
         return MoveInside(NAXX_MAP_ID, helper.rangedPos.first, helper.rangedPos.second, bot->GetPositionZ(), 3.0f,
                           MovementPriority::MOVEMENT_COMBAT);
     }
-    else if (botAI->IsHeal(bot))
-        return MoveInside(NAXX_MAP_ID, helper.healPos.first, helper.healPos.second, bot->GetPositionZ(), 0.0f,
+
+    if (botAI->IsHeal(bot))
+    {
+        return MoveInside(NAXX_MAP_ID, helper.healPos.first, helper.healPos.second, bot->GetPositionZ(), 1.0f,
                           MovementPriority::MOVEMENT_COMBAT);
+    }
+
     return false;
 }
 
 bool GluthSlowdownAction::Execute(Event /*event*/)
 {
-    if (!helper.UpdateBossAI())
+    if (!helper.UpdateBossAI() || !helper.IsSlowdownHunter(bot) || helper.JustStartCombat())
         return false;
 
-    bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
-    if (!raid25)
-        return false;
+    if (bot->getClass() == CLASS_HUNTER)
+        return botAI->CastSpell("frost trap", bot);
 
-    if (helper.JustStartCombat())
-        return false;
-
-    switch (bot->getClass())
-    {
-        case CLASS_HUNTER:
-            return botAI->CastSpell("frost trap", bot);
-            break;
-        default:
-            break;
-    }
     return false;
 }

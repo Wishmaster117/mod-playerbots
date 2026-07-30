@@ -13,10 +13,11 @@
 #include "NaxxBossHelper.h"
 #include "Trigger.h"
 
-class MutatingInjectionTrigger : public HasAuraTrigger
+class MutatingInjectionTrigger : public Trigger
 {
 public:
-    MutatingInjectionTrigger(PlayerbotAI* ai) : HasAuraTrigger(ai, "mutating injection", 1) {}
+    MutatingInjectionTrigger(PlayerbotAI* ai) : Trigger(ai, "mutating injection", 1) {}
+    bool IsActive() override;
 };
 
 class MutatingInjectionMeleeTrigger : public MutatingInjectionTrigger
@@ -40,43 +41,68 @@ public:
     {
         this->prev_check = false;
     }
-    virtual bool IsActive() override;
+    bool IsActive() override;
 
 protected:
     bool prev_check;
 };
 
-class MutatingInjectionRemovedTrigger : public HasNoAuraTrigger
+class MutatingInjectionRemovedTrigger : public Trigger
 {
 public:
-    MutatingInjectionRemovedTrigger(PlayerbotAI* ai) : HasNoAuraTrigger(ai, "mutating injection") {}
-    virtual bool IsActive();
+    MutatingInjectionRemovedTrigger(PlayerbotAI* ai) : Trigger(ai, "mutating injection removed", 1), hadInjection(false) {}
+    bool IsActive() override;
+
+private:
+    bool hadInjection;
 };
 
 class GrobbulusCloudTrigger : public Trigger
 {
 public:
-    GrobbulusCloudTrigger(PlayerbotAI* ai) : Trigger(ai, "grobbulus cloud event"), last_cloud_ms(0) {}
+    GrobbulusCloudTrigger(PlayerbotAI* ai)
+        : Trigger(ai, "grobbulus cloud event"), combatStarted(false), nextRotationMs(0), lastRotationMs(0), lastCloudGuid(0)
+    {
+    }
+
     bool IsActive() override;
 
 private:
-    uint32 last_cloud_ms;
-    static constexpr uint32 CloudRotationDelayMs = 15000;
+    bool combatStarted;
+    uint32 nextRotationMs;
+    uint32 lastRotationMs;
+    uint64 lastCloudGuid;
+    static constexpr uint32 CloudRotationPeriodMs = 15000;
+    static constexpr uint32 CloudFallbackDelayMs = 16000;
 };
 
-//class HeiganMeleeTrigger : public Trigger
-//{
-//public:
-//    HeiganMeleeTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan melee") {}
-//    virtual bool IsActive();
-//};
-//
-//class HeiganRangedTrigger : public Trigger
-//{
-//public:
-//    HeiganRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan ranged") {}
-//    bool IsActive() override;
-//};
+class GrobbulusTrigger : public Trigger
+{
+public:
+    GrobbulusTrigger(PlayerbotAI* ai) : Trigger(ai, "grobbulus") {}
+    bool IsActive() override;
+};
+
+class HeiganMeleeTrigger : public Trigger
+{
+public:
+    HeiganMeleeTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan melee") {}
+    bool IsActive() override;
+};
+
+class HeiganRangedTrigger : public Trigger
+{
+public:
+    HeiganRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan ranged") {}
+    bool IsActive() override;
+};
+
+class HeiganDecrepitFeverTrigger : public Trigger
+{
+public:
+    HeiganDecrepitFeverTrigger(PlayerbotAI* ai) : Trigger(ai, "heigan decrepit fever") {}
+    bool IsActive() override;
+};
 
 class RazuviousTankTrigger : public Trigger
 {
@@ -115,12 +141,19 @@ public:
     bool IsActive() override;
 };
 
- class FaerlinaTrigger : public Trigger
- {
- public:
-     FaerlinaTrigger(PlayerbotAI* ai) : Trigger(ai, "faerlina") {}
-     bool IsActive() override;
- };
+class FaerlinaTrigger : public Trigger
+{
+public:
+    FaerlinaTrigger(PlayerbotAI* ai) : Trigger(ai, "faerlina") {}
+    bool IsActive() override;
+};
+
+class FaerlinaFrenzyTrigger : public Trigger
+{
+public:
+    FaerlinaFrenzyTrigger(PlayerbotAI* ai) : Trigger(ai, "faerlina frenzy") {}
+    bool IsActive() override;
+};
 
 class MaexxnaTrigger : public Trigger
 {
@@ -129,26 +162,74 @@ public:
     bool IsActive() override;
 };
 
-//class PatchwerkTankTrigger : public Trigger
-//{
-//public:
-//    PatchwerkTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk tank") {}
-//    bool IsActive() override;
-//};
-//
-//class PatchwerkNonTankTrigger : public Trigger
-//{
-//public:
-//    PatchwerkNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk non-tank") {}
-//    bool IsActive() override;
-//};
-//
-//class PatchwerkRangedTrigger : public Trigger
-//{
-//public:
-//    PatchwerkRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk ranged") {}
-//    bool IsActive() override;
-//};
+class MaexxnaWebWrapTrigger : public Trigger
+{
+public:
+    MaexxnaWebWrapTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna web wrap") {}
+    bool IsActive() override;
+};
+
+class MaexxnaSpiderlingsTrigger : public Trigger
+{
+public:
+    MaexxnaSpiderlingsTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna spiderlings") {}
+    bool IsActive() override;
+};
+
+class GothikMoveToAssignedSideTrigger : public Trigger
+{
+public:
+    GothikMoveToAssignedSideTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik move to assigned side") {}
+    bool IsActive() override;
+};
+
+class GothikChooseTargetTrigger : public Trigger
+{
+public:
+    GothikChooseTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik choose target") {}
+    bool IsActive() override;
+};
+
+class NothTrigger : public Trigger
+{
+public:
+    NothTrigger(PlayerbotAI* ai) : Trigger(ai, "noth"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    NothBossHelper helper;
+};
+
+class NothCurseTrigger : public Trigger
+{
+public:
+    NothCurseTrigger(PlayerbotAI* ai) : Trigger(ai, "noth curse"), helper(ai) {}
+    bool IsActive() override;
+
+private:
+    NothBossHelper helper;
+};
+
+class PatchwerkTankTrigger : public Trigger
+{
+public:
+    PatchwerkTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk tank") {}
+    bool IsActive() override;
+};
+
+class PatchwerkNonTankTrigger : public Trigger
+{
+public:
+    PatchwerkNonTankTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk non-tank") {}
+    bool IsActive() override;
+};
+
+class PatchwerkRangedTrigger : public Trigger
+{
+public:
+    PatchwerkRangedTrigger(PlayerbotAI* ai) : Trigger(ai, "patchwerk ranged") {}
+    bool IsActive() override;
+};
 
 class ThaddiusPhasePetTrigger : public Trigger
 {

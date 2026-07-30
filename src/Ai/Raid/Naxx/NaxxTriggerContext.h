@@ -19,8 +19,10 @@ public:
         creators["mutating injection ranged"] = &RaidNaxxTriggerContext::mutating_injection_ranged;
         creators["mutating injection removed"] = &RaidNaxxTriggerContext::mutating_injection_removed;
         creators["grobbulus cloud"] = &RaidNaxxTriggerContext::grobbulus_cloud;
-        //creators["heigan melee"] = &RaidNaxxTriggerContext::heigan_melee;
-        //creators["heigan ranged"] = &RaidNaxxTriggerContext::heigan_ranged;
+        creators["grobbulus"] = &RaidNaxxTriggerContext::grobbulus;
+        creators["heigan melee"] = &RaidNaxxTriggerContext::heigan_melee;
+        creators["heigan ranged"] = &RaidNaxxTriggerContext::heigan_ranged;
+        creators["heigan decrepit fever"] = &RaidNaxxTriggerContext::heigan_decrepit_fever;
 
         creators["thaddius phase pet"] = &RaidNaxxTriggerContext::thaddius_phase_pet;
         creators["thaddius phase pet lose aggro"] = &RaidNaxxTriggerContext::thaddius_phase_pet_lose_aggro;
@@ -40,10 +42,20 @@ public:
 
         creators["anub'rekhan"] = &RaidNaxxTriggerContext::anubrekhan;
         creators["faerlina"] = &RaidNaxxTriggerContext::faerlina;
+        creators["faerlina frenzy"] = &RaidNaxxTriggerContext::faerlina_frenzy;
         creators["maexxna"] = &RaidNaxxTriggerContext::maexxna;
-        //creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
-        //creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
-        //creators["patchwerk ranged"] = &RaidNaxxTriggerContext::patchwerk_ranged;
+        creators["maexxna web wrap"] = &RaidNaxxTriggerContext::maexxna_web_wrap;
+        creators["maexxna spiderlings"] = &RaidNaxxTriggerContext::maexxna_spiderlings;
+
+        creators["gothik move to assigned side"] = &RaidNaxxTriggerContext::gothik_move_to_assigned_side;
+        creators["gothik choose target"] = &RaidNaxxTriggerContext::gothik_choose_target;
+
+        creators["noth"] = &RaidNaxxTriggerContext::noth;
+        creators["noth curse"] = &RaidNaxxTriggerContext::noth_curse;
+
+        creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
+        creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
+        creators["patchwerk ranged"] = &RaidNaxxTriggerContext::patchwerk_ranged;
 
         creators["gluth"] = &RaidNaxxTriggerContext::gluth;
         creators["gluth main tank mortal wound"] = &RaidNaxxTriggerContext::gluth_main_tank_mortal_wound;
@@ -56,8 +68,10 @@ private:
     static Trigger* mutating_injection_ranged(PlayerbotAI* ai) { return new MutatingInjectionRangedTrigger(ai); }
     static Trigger* mutating_injection_removed(PlayerbotAI* ai) { return new MutatingInjectionRemovedTrigger(ai); }
     static Trigger* grobbulus_cloud(PlayerbotAI* ai) { return new GrobbulusCloudTrigger(ai); }
-    //static Trigger* heigan_melee(PlayerbotAI* ai) { return new HeiganMeleeTrigger(ai); }
-    //static Trigger* heigan_ranged(PlayerbotAI* ai) { return new HeiganRangedTrigger(ai); }
+    static Trigger* grobbulus(PlayerbotAI* ai) { return new GrobbulusTrigger(ai); }
+    static Trigger* heigan_melee(PlayerbotAI* ai) { return new HeiganMeleeTrigger(ai); }
+    static Trigger* heigan_ranged(PlayerbotAI* ai) { return new HeiganRangedTrigger(ai); }
+    static Trigger* heigan_decrepit_fever(PlayerbotAI* ai) { return new HeiganDecrepitFeverTrigger(ai); }
 
     static Trigger* thaddius_phase_pet(PlayerbotAI* ai) { return new ThaddiusPhasePetTrigger(ai); }
     static Trigger* thaddius_phase_pet_lose_aggro(PlayerbotAI* ai) { return new ThaddiusPhasePetLoseAggroTrigger(ai); }
@@ -74,10 +88,17 @@ private:
     static Trigger* kelthuzad(PlayerbotAI* ai) { return new KelthuzadTrigger(ai); }
     static Trigger* anubrekhan(PlayerbotAI* ai) { return new AnubrekhanTrigger(ai); }
     static Trigger* faerlina(PlayerbotAI* ai) { return new FaerlinaTrigger(ai); }
+    static Trigger* faerlina_frenzy(PlayerbotAI* ai) { return new FaerlinaFrenzyTrigger(ai); }
     static Trigger* maexxna(PlayerbotAI* ai) { return new MaexxnaTrigger(ai); }
-    //static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
-    //static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
-    //static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }
+    static Trigger* maexxna_web_wrap(PlayerbotAI* ai) { return new MaexxnaWebWrapTrigger(ai); }
+    static Trigger* maexxna_spiderlings(PlayerbotAI* ai) { return new MaexxnaSpiderlingsTrigger(ai); }
+    static Trigger* gothik_move_to_assigned_side(PlayerbotAI* ai) { return new GothikMoveToAssignedSideTrigger(ai); }
+    static Trigger* gothik_choose_target(PlayerbotAI* ai) { return new GothikChooseTargetTrigger(ai); }
+    static Trigger* noth(PlayerbotAI* ai) { return new NothTrigger(ai); }
+    static Trigger* noth_curse(PlayerbotAI* ai) { return new NothCurseTrigger(ai); }
+    static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
+    static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
+    static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }
     static Trigger* gluth(PlayerbotAI* ai) { return new GluthTrigger(ai); }
     static Trigger* gluth_main_tank_mortal_wound(PlayerbotAI* ai) { return new GluthMainTankMortalWoundTrigger(ai); }
     static Trigger* loatheb(PlayerbotAI* ai) { return new LoathebTrigger(ai); }

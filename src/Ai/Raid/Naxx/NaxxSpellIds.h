@@ -14,17 +14,55 @@
 // use src/server/scripts/Northrend/Naxxramas/naxxramas.h for CreatureId, NaxxramasSay, NaxxramasEvent, NaxxramasMisc
 namespace NaxxSpellIds
 {
-    // Heigan
+    // Grand Widow Faerlina
+    static constexpr uint32 FaerlinaFrenzy = 28798;
+    static constexpr uint32 FaerlinaWidowsEmbrace = 28732;
+    static constexpr uint32 NaxxramasWorshipperEntry = 16506;
+    static constexpr uint32 NaxxramasFollowerEntry = 16505;
+
+    // Maexxna
+    static constexpr uint32 MaexxnaWebWrapStun = 28622;
+    static constexpr uint32 MaexxnaWebWrapEntry = 16486;
+    static constexpr uint32 MaexxnaSpiderlingEntry = 17055;
+
+    // Gothik the Harvester
+    static constexpr float GothikGateY = -3360.78f;
+    static constexpr uint32 GothikLivingTraineeEntry = 16124;
+    static constexpr uint32 GothikLivingKnightEntry = 16125;
+    static constexpr uint32 GothikLivingRiderEntry = 16126;
+    static constexpr uint32 GothikDeadTraineeEntry = 16127;
+    static constexpr uint32 GothikDeadKnightEntry = 16148;
+    static constexpr uint32 GothikDeadHorseEntry = 16149;
+    static constexpr uint32 GothikDeadRiderEntry = 16150;
+
+    // Heigan the Unclean
     static constexpr uint32 Eruption10 = 29371;
-/*
-    SPELL_SPELL_DISRUPTION          = 29310,
-    SPELL_DECREPIT_FEVER            = 29998,
-    SPELL_PLAGUE_CLOUD              = 29350,
-    SPELL_TELEPORT_SELF             = 30211
-*/
+    static constexpr uint32 HeiganSpellDisruption = 29310;
+    static constexpr uint32 DecrepitFever = 29998;
+    static constexpr uint32 HeiganPlagueCloud = 29350;
+    static constexpr uint32 HeiganTeleportSelf = 30211;
 
     // Grobbulus
     static constexpr uint32 PoisonCloud = 28240;
+    static constexpr uint32 MutatingInjection = 28169;
+    static constexpr uint32 MutatingExplosion = 28206;
+    static constexpr uint32 SlimeSpray = 28157;
+    static constexpr uint32 PoisonCloudDamageAura = 28158;
+    static constexpr uint32 FalloutSlimeEntry = 16290;
+
+    // Noth the Plaguebringer
+    static constexpr uint32 CurseOfThePlaguebringer = 29213;
+    static constexpr uint32 NothCripple = 29212;
+    static constexpr uint32 NothBlink = 29208;
+    static constexpr uint32 NothPlaguedWarriorEntry = 16984;
+    static constexpr uint32 NothPlaguedChampionEntry = 16983;
+    static constexpr uint32 NothPlaguedGuardianEntry = 16981;
+
+    // The Four Horsemen
+    static constexpr uint32 MarkOfKorthazz = 28832;
+    static constexpr uint32 MarkOfBlaumeux = 28833;
+    static constexpr uint32 MarkOfRivendare = 28834;
+    static constexpr uint32 MarkOfZeliek = 28835;
 
     // Thaddius polarity
     static constexpr uint32 PositiveCharge10 = 28059;
@@ -61,11 +99,26 @@ namespace NaxxSpellIds
     SPELL_POSITIVE_POLARITY             = 28059,
     SPELL_NEGATIVE_POLARITY             = 28084
 */
+    // Kel'Thuzad
+    static constexpr uint32 FrostBlast = 27808;
+    static constexpr uint32 ShadowFissure = 27810;
+    static constexpr uint32 DetonateMana = 27819;
+    static constexpr uint32 FrostBoltSingle = 28478;
+    static constexpr uint32 FrostBoltMulti = 28479;
+    static constexpr uint32 ChainsOfKelthuzad = 28410;
+    static constexpr uint32 KelthuzadSoldierEntry = 16427;
+    static constexpr uint32 KelthuzadAbominationEntry = 16428;
+    static constexpr uint32 KelthuzadSoulWeaverEntry = 16429;
+    static constexpr uint32 KelthuzadGuardianEntry = 16441;
+
     // Sapphiron
     static constexpr uint32 Icebolt10 = 28522;
     static constexpr uint32 Icebolt25 = 28526;
     static constexpr uint32 Chill10 = 28547;
     static constexpr uint32 Chill25 = 55699;
+    static constexpr uint32 LifeDrain = 28542;
+    static constexpr uint32 FrostMissile = 30101;
+    static constexpr uint32 FrostExplosion = 28524;
 /*
     // Fight
     SPELL_FROST_AURA                = 28531,

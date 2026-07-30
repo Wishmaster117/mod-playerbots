@@ -6,6 +6,9 @@
 
 #include "NaxxActions.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 
@@ -14,98 +17,86 @@ bool KelthuzadChooseTargetAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
+    GuidVector const targets = context->GetValue<GuidVector>("possible targets")->Get();
+    Unit* soldier = nullptr;
+    Unit* weaver = nullptr;
+    Unit* abomination = nullptr;
+    Unit* kelthuzad = helper.GetBoss();
+
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (!unit || !unit->IsAlive())
+            continue;
+
+        float const centerDistance = unit->GetDistance2d(helper.center.first, helper.center.second);
+        if (centerDistance > KelthuzadBossHelper::ROOM_MAX_RADIUS + 4.0f)
+            continue;
+
+        switch (unit->GetEntry())
+        {
+            case NaxxSpellIds::KelthuzadSoldierEntry:
+                if (!soldier || centerDistance < soldier->GetDistance2d(helper.center.first, helper.center.second))
+                    soldier = unit;
+                break;
+            case NaxxSpellIds::KelthuzadAbominationEntry:
+                if (!abomination || centerDistance < abomination->GetDistance2d(helper.center.first, helper.center.second))
+                    abomination = unit;
+                break;
+            case NaxxSpellIds::KelthuzadSoulWeaverEntry:
+                if (!weaver || centerDistance < weaver->GetDistance2d(helper.center.first, helper.center.second))
+                    weaver = unit;
+                break;
+            default:
+                break;
+        }
+    }
+
+    bool const isOffTank = botAI->IsTank(bot) && !botAI->IsMainTank(bot) && botAI->IsAssistTank(bot);
+    std::vector<Unit*> guardians = helper.GetGuardians();
+    Unit* guardian = isOffTank ? helper.GetGuardianToPickup(bot) : nullptr;
     Unit* target = nullptr;
-    Unit *target_soldier = nullptr, *target_weaver = nullptr, *target_abomination = nullptr, *target_kelthuzad = nullptr,
-         *target_guardian = nullptr;
-    for (auto i = attackers.begin(); i != attackers.end(); ++i)
+
+    if (isOffTank && !guardians.empty())
     {
-        Unit* unit = botAI->GetUnit(*i);
-        if (!unit)
-            continue;
-
-        if (botAI->EqualLowercaseName(unit->GetName(), "guardian of icecrown"))
-        {
-            if (!target_guardian)
-                target_guardian = unit;
-            else if (unit->GetVictim() && target_guardian->GetVictim() && unit->GetVictim()->ToPlayer() &&
-                     target_guardian->GetVictim()->ToPlayer() && !botAI->IsAssistTank(unit->GetVictim()->ToPlayer()) &&
-                     botAI->IsAssistTank(target_guardian->GetVictim()->ToPlayer()))
-            {
-                target_guardian = unit;
-            }
-            else if (unit->GetVictim() && target_guardian->GetVictim() && unit->GetVictim()->ToPlayer() &&
-                     target_guardian->GetVictim()->ToPlayer() && !botAI->IsAssistTank(unit->GetVictim()->ToPlayer()) &&
-                     !botAI->IsAssistTank(target_guardian->GetVictim()->ToPlayer()) &&
-                     target_guardian->GetDistance2d(helper.center.first, helper.center.second) >
-                         bot->GetDistance2d(unit))
-            {
-                target_guardian = unit;
-            }
-        }
-
-        if (unit->GetDistance2d(helper.center.first, helper.center.second) > 30.0f)
-            continue;
-
-        if (bot->GetDistance2d(unit) > sPlayerbotAIConfig.spellDistance)
-            continue;
-
-        if (botAI->EqualLowercaseName(unit->GetName(), "unstoppable abomination"))
-        {
-            if (target_abomination == nullptr ||
-                target_abomination->GetDistance2d(helper.center.first, helper.center.second) >
-                    unit->GetDistance2d(helper.center.first, helper.center.second))
-            {
-                target_abomination = unit;
-            }
-        }
-        if (botAI->EqualLowercaseName(unit->GetName(), "soldier of the frozen wastes"))
-        {
-            if (target_soldier == nullptr ||
-                target_soldier->GetDistance2d(helper.center.first, helper.center.second) >
-                    unit->GetDistance2d(helper.center.first, helper.center.second))
-            {
-                target_soldier = unit;
-            }
-        }
-        if (botAI->EqualLowercaseName(unit->GetName(), "soul weaver"))
-        {
-            if (target_weaver == nullptr || target_weaver->GetDistance2d(helper.center.first, helper.center.second) >
-                                                unit->GetDistance2d(helper.center.first, helper.center.second))
-                target_weaver = unit;
-        }
-
-        if (botAI->EqualLowercaseName(unit->GetName(), "kel'thuzad"))
-            target_kelthuzad = unit;
+        target = guardian;
     }
-    std::vector<Unit*> targets;
-    if (botAI->IsRanged(bot))
+    else if (helper.IsPhaseOne())
     {
-        if (botAI->GetRangedDpsIndex(bot) <= 1)
-            targets = {target_soldier, target_weaver, target_abomination, target_kelthuzad};
+        if (botAI->IsTank(bot))
+            target = abomination ? abomination : (weaver ? weaver : soldier);
+        else if (botAI->IsRanged(bot))
+            target = botAI->GetRangedDpsIndex(bot) <= 1 ? (soldier ? soldier : (weaver ? weaver : abomination))
+                                                       : (weaver ? weaver : (soldier ? soldier : abomination));
         else
-            targets = {target_weaver, target_soldier, target_abomination, target_kelthuzad};
+            target = abomination ? abomination : (soldier ? soldier : weaver);
     }
-    else if (botAI->IsAssistTank(bot))
-        targets = {target_abomination, target_guardian, target_kelthuzad};
     else
-        targets = {target_abomination, target_kelthuzad};
-
-    for (Unit* t : targets)
     {
-        if (t)
+        bool const remainingPhaseOneAdds = soldier || weaver || abomination;
+        if (!botAI->IsHeal(bot) && remainingPhaseOneAdds)
         {
-            target = t;
-            break;
+            if (botAI->IsRanged(bot))
+                target = weaver ? weaver : (soldier ? soldier : abomination);
+            else
+                target = abomination ? abomination : (soldier ? soldier : weaver);
+        }
+        else
+        {
+            target = kelthuzad;
         }
     }
-    if (context->GetValue<Unit*>("current target")->Get() == target)
+
+    if (!target)
         return false;
 
-    if (target_kelthuzad && target == target_kelthuzad)
-        return Attack(target, true);
+    if (!botAI->IsRanged(bot) && !helper.IsWithinRoom(target, KelthuzadBossHelper::ROOM_MAX_RADIUS + 2.0f))
+        return false;
 
-    return Attack(target, false);
+    if (AI_VALUE(Unit*, "current target") == target)
+        return false;
+
+    return Attack(target, target == kelthuzad);
 }
 
 bool KelthuzadPositionAction::Execute(Event /*event*/)
@@ -115,69 +106,169 @@ bool KelthuzadPositionAction::Execute(Event /*event*/)
 
     if (helper.IsPhaseOne())
     {
-        if (AI_VALUE(Unit*, "current target") == nullptr)
+        if (botAI->IsTank(bot))
+        {
+            Unit* target = AI_VALUE(Unit*, "current target");
+            if (target && helper.IsWithinRoom(target, KelthuzadBossHelper::PHASE1_TANK_MAX_RADIUS) &&
+                bot->GetDistance2d(target) > 4.0f)
+            {
+                return MoveNear(target, 3.0f, MovementPriority::MOVEMENT_COMBAT);
+            }
+
+            if (bot->GetDistance2d(helper.center.first, helper.center.second) > KelthuzadBossHelper::PHASE1_TANK_HOLD_RADIUS)
+            {
+                return MoveInside(NAXX_MAP_ID, helper.center.first, helper.center.second, bot->GetPositionZ(),
+                                  KelthuzadBossHelper::PHASE1_TANK_HOLD_RADIUS, MovementPriority::MOVEMENT_COMBAT);
+            }
+            return false;
+        }
+
+        if (bot->GetDistance2d(helper.center.first, helper.center.second) > 20.0f)
+        {
             return MoveInside(NAXX_MAP_ID, helper.center.first, helper.center.second, bot->GetPositionZ(), 3.0f,
                               MovementPriority::MOVEMENT_COMBAT);
-    }
-    else if (helper.IsPhaseTwo())
-    {
-        Unit* shadow_fissure = helper.GetAnyShadowFissure();
-        if (!shadow_fissure || !bot->IsWithinDistInMap(shadow_fissure, 10.0f))
-        {
-            float distance, angle;
-            if (botAI->IsMainTank(bot))
-            {
-                if (AI_VALUE2(bool, "has aggro", "current target"))
-                    return MoveTo(NAXX_MAP_ID, helper.tank_pos.first, helper.tank_pos.second, bot->GetPositionZ(), false, false, false,
-                                  false, MovementPriority::MOVEMENT_COMBAT);
-                else
-                    return false;
-            }
-            else if (botAI->IsRanged(bot))
-            {
-                uint32 index = botAI->GetRangedIndex(bot);
-                if (index < 8)
-                {
-                    distance = 20.0f;
-                    angle = index * M_PI / 4;
-                }
-                else
-                {
-                    distance = 32.0f;
-                    angle = (index - 8) * M_PI / 4;
-                }
-                float dx, dy;
-                dx = helper.center.first + cos(angle) * distance;
-                dy = helper.center.second + sin(angle) * distance;
-                return MoveTo(NAXX_MAP_ID, dx, dy, bot->GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
-            }
-            else if (botAI->IsTank(bot))
-            {
-                Unit* cur_tar = AI_VALUE(Unit*, "current target");
-                if (cur_tar && cur_tar->GetVictim() && cur_tar->GetVictim()->ToPlayer() &&
-                    botAI->EqualLowercaseName(cur_tar->GetName(), "guardian of icecrown") &&
-                    botAI->IsAssistTank(cur_tar->GetVictim()->ToPlayer()))
-                {
-                    return MoveTo(NAXX_MAP_ID, helper.assist_tank_pos.first, helper.assist_tank_pos.second, bot->GetPositionZ(),
-                                  false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
-                }
-                else
-                    return false;
-            }
         }
-        else
-        {
-            float dx, dy;
-            float angle;
-            if (!botAI->IsRanged(bot))
-                angle = shadow_fissure->GetAngle(helper.center.first, helper.center.second);
-            else
-                angle = bot->GetAngle(shadow_fissure) + M_PI;
 
-            dx = shadow_fissure->GetPositionX() + cos(angle) * 10.0f;
-            dy = shadow_fissure->GetPositionY() + sin(angle) * 10.0f;
-            return MoveTo(NAXX_MAP_ID, dx, dy, bot->GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+        Unit* target = AI_VALUE(Unit*, "current target");
+        if (!botAI->IsRanged(bot) && target && helper.IsWithinRoom(target, 20.0f) && bot->GetDistance2d(target) > 4.0f)
+            return MoveNear(target, 3.0f, MovementPriority::MOVEMENT_COMBAT);
+
+        return false;
+    }
+
+    if (!helper.IsPhaseTwo())
+        return false;
+
+    if (helper.HasChains(bot))
+    {
+        bot->AttackStop();
+        bot->StopMoving();
+        return true;
+    }
+
+    if (helper.HasDetonateMana(bot))
+    {
+        float dx = bot->GetPositionX() - helper.center.first;
+        float dy = bot->GetPositionY() - helper.center.second;
+        float length = std::sqrt(dx * dx + dy * dy);
+        if (length < 0.1f)
+        {
+            float const angle = float(botAI->GetGroupSlotIndex(bot)) * (float(M_PI) / 8.0f);
+            dx = std::cos(angle);
+            dy = std::sin(angle);
+            length = 1.0f;
+        }
+
+        float const radius = KelthuzadBossHelper::DETONATE_MAX_RADIUS;
+        float x = helper.center.first + dx / length * radius;
+        float y = helper.center.second + dy / length * radius;
+        helper.ClampToRoom(x, y, KelthuzadBossHelper::DETONATE_MIN_RADIUS, KelthuzadBossHelper::DETONATE_MAX_RADIUS);
+
+        if (bot->GetDistance2d(x, y) <= 1.5f)
+            return false;
+
+        return MoveTo(NAXX_MAP_ID, x, y, bot->GetPositionZ(), false, false, false, false,
+                      MovementPriority::MOVEMENT_FORCED);
+    }
+
+    if (Player* frostBlastTarget = helper.GetPlayerWithAura(NaxxSpellIds::FrostBlast))
+    {
+        if (frostBlastTarget == bot)
+        {
+            bot->StopMoving();
+            return false;
+        }
+
+        if (bot->GetDistance2d(frostBlastTarget) < 11.0f)
+        {
+            float dx = bot->GetPositionX() - frostBlastTarget->GetPositionX();
+            float dy = bot->GetPositionY() - frostBlastTarget->GetPositionY();
+            float length = std::sqrt(dx * dx + dy * dy);
+            if (length < 0.1f)
+            {
+                float const angle = float(botAI->GetGroupSlotIndex(bot)) * (float(M_PI) / 8.0f);
+                dx = std::cos(angle);
+                dy = std::sin(angle);
+                length = 1.0f;
+            }
+
+            float x = frostBlastTarget->GetPositionX() + dx / length * 12.0f;
+            float y = frostBlastTarget->GetPositionY() + dy / length * 12.0f;
+            helper.ClampToRoom(x, y);
+            return MoveTo(NAXX_MAP_ID, x, y, bot->GetPositionZ(), false, false, false, false,
+                          MovementPriority::MOVEMENT_FORCED);
         }
     }
+
+    if (Unit* fissure = helper.GetAnyShadowFissure())
+    {
+        if (bot->GetDistance2d(fissure) < 11.0f)
+        {
+            float dx = bot->GetPositionX() - fissure->GetPositionX();
+            float dy = bot->GetPositionY() - fissure->GetPositionY();
+            float length = std::sqrt(dx * dx + dy * dy);
+            if (length < 0.1f)
+            {
+                dx = bot->GetPositionX() - helper.center.first;
+                dy = bot->GetPositionY() - helper.center.second;
+                length = std::max(0.1f, std::sqrt(dx * dx + dy * dy));
+            }
+
+            float x = fissure->GetPositionX() + dx / length * 12.0f;
+            float y = fissure->GetPositionY() + dy / length * 12.0f;
+            helper.ClampToRoom(x, y);
+            return MoveTo(NAXX_MAP_ID, x, y, bot->GetPositionZ(), false, false, false, false,
+                          MovementPriority::MOVEMENT_FORCED);
+        }
+    }
+
+    if (botAI->IsMainTank(bot))
+    {
+        if (!AI_VALUE2(bool, "has aggro", "current target"))
+            return false;
+
+        std::pair<float, float> const hold = helper.GetMainTankHoldPosition();
+        if (bot->GetDistance2d(hold.first, hold.second) <= 2.0f)
+            return false;
+
+        return MoveTo(NAXX_MAP_ID, hold.first, hold.second, bot->GetPositionZ(), false, false, false, false,
+                      MovementPriority::MOVEMENT_COMBAT);
+    }
+
+    bool const isOffTank = botAI->IsTank(bot) && !botAI->IsMainTank(bot) && botAI->IsAssistTank(bot);
+    if (isOffTank)
+    {
+        std::vector<Unit*> guardians = helper.GetGuardians();
+        if (!guardians.empty())
+        {
+            Unit* pickup = helper.GetGuardianToPickup(bot);
+            if (pickup && pickup->GetVictim() != bot && bot->GetDistance2d(pickup) > 4.0f)
+                return MoveNear(pickup, 3.0f, MovementPriority::MOVEMENT_COMBAT);
+
+            if (helper.AllGuardiansOnAssistTank(bot))
+            {
+                std::pair<float, float> const hold = helper.GetAssistTankHoldPosition();
+                if (bot->GetDistance2d(hold.first, hold.second) > 2.0f)
+                {
+                    return MoveTo(NAXX_MAP_ID, hold.first, hold.second, bot->GetPositionZ(), false, false, false, false,
+                                  MovementPriority::MOVEMENT_COMBAT);
+                }
+            }
+        }
+        return false;
+    }
+
+    if (botAI->IsRanged(bot))
+    {
+        float x = 0.0f;
+        float y = 0.0f;
+        helper.ComputeRangedSpreadPosition(botAI->GetRangedIndex(bot), std::max<uint32>(1, helper.GetRangedCount()), x, y);
+        if (bot->GetDistance2d(x, y) <= 2.0f)
+            return false;
+
+        return MoveTo(NAXX_MAP_ID, x, y, bot->GetPositionZ(), false, false, false, false,
+                      MovementPriority::MOVEMENT_COMBAT);
+    }
+
     return false;
 }

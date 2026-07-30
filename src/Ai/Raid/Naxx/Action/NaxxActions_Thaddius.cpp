@@ -12,38 +12,62 @@
 
 bool ThaddiusAttackNearestPetAction::isUseful()
 {
-    if (!helper.UpdateBossAI())
+    if (!helper.UpdateBossAI() || !helper.IsPhasePet() || !helper.IsPetPhaseEngaged())
         return false;
 
-    if (!helper.IsPhasePet())
-        return false;
-
-    Unit* target = helper.GetNearestPet();
-    if (!target || !bot->IsWithinDistInMap(target, 50.0f))
-        return false;
-
-    return true;
+    Unit* target = helper.GetAssignedPetForBot();
+    return target && target->IsAlive();
 }
 
 bool ThaddiusAttackNearestPetAction::Execute(Event /*event*/)
 {
-    Unit* target = helper.GetNearestPet();
-    if (!target || !bot->IsWithinLOSInMap(target))
-        return MoveTo(target, 0, MovementPriority::MOVEMENT_COMBAT);
+    if (!helper.UpdateBossAI() || !helper.IsPetPhaseEngaged())
+        return false;
+
+    Unit* target = helper.GetAssignedPetForBot();
+    if (!target || !target->IsAlive())
+        return false;
+
+    if (botAI->IsHeal(bot))
+    {
+        std::pair<float, float> const position = helper.PetPhaseGetPosForRanged(target);
+        if (bot->GetDistance2d(position.first, position.second) <= 3.0f)
+            return false;
+
+        return MoveTo(NAXX_MAP_ID, position.first, position.second, helper.tankPosZ, false, false, false, false,
+                      MovementPriority::MOVEMENT_COMBAT);
+    }
+
+    if (!bot->IsWithinLOSInMap(target))
+    {
+        std::pair<float, float> const position = botAI->IsTank(bot) ? helper.PetPhaseGetPosForTank(target) :
+                                                                    helper.PetPhaseGetPosForRanged(target);
+        return MoveTo(NAXX_MAP_ID, position.first, position.second, helper.tankPosZ, false, false, false, false,
+                      MovementPriority::MOVEMENT_COMBAT);
+    }
 
     if (AI_VALUE(Unit*, "current target") != target)
         return Attack(target);
 
     if (botAI->IsTank(bot) && AI_VALUE2(bool, "has aggro", "current target"))
     {
-        std::pair<float, float> posForTank = helper.PetPhaseGetPosForTank();
-        return MoveTo(533, posForTank.first, posForTank.second, helper.tankPosZ, false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+        std::pair<float, float> const position = helper.PetPhaseGetPosForTank(target);
+        if (bot->GetDistance2d(position.first, position.second) > 2.0f)
+        {
+            return MoveTo(NAXX_MAP_ID, position.first, position.second, helper.tankPosZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_COMBAT);
+        }
     }
-    if (botAI->IsRanged(bot))
+    else if (botAI->IsRanged(bot))
     {
-        std::pair<float, float> posForRanged = helper.PetPhaseGetPosForRanged();
-        return MoveTo(533, posForRanged.first, posForRanged.second, helper.tankPosZ, false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+        std::pair<float, float> const position = helper.PetPhaseGetPosForRanged(target);
+        if (bot->GetDistance2d(position.first, position.second) > 3.0f)
+        {
+            return MoveTo(NAXX_MAP_ID, position.first, position.second, helper.tankPosZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_COMBAT);
+        }
     }
+
     return false;
 }
 
@@ -74,8 +98,7 @@ bool ThaddiusMoveToPlatformAction::Execute(Event /*event*/)
             {
                 float distance = bot->GetExactDist2d(position[0].first, position[0].second);
                 if (distance < sPlayerbotAIConfig.contactDistance)
-                    JumpTo(bot->GetMapId(), position[2].first, position[2].second, low_z, MovementPriority::MOVEMENT_COMBAT);
-                    // bot->TeleportTo(bot->GetMapId(), position[2].first, position[2].second, low_z, bot->GetOrientation());
+                    return JumpTo(bot->GetMapId(), position[2].first, position[2].second, low_z, MovementPriority::MOVEMENT_COMBAT);
             }
         }
         else
@@ -84,8 +107,7 @@ bool ThaddiusMoveToPlatformAction::Execute(Event /*event*/)
             {
                 float distance = bot->GetExactDist2d(position[1].first, position[1].second);
                 if (distance < sPlayerbotAIConfig.contactDistance)
-                    JumpTo(bot->GetMapId(), position[3].first, position[3].second, low_z, MovementPriority::MOVEMENT_COMBAT);
-                    // bot->TeleportTo(bot->GetMapId(), position[3].first, position[3].second, low_z, bot->GetOrientation());
+                    return JumpTo(bot->GetMapId(), position[3].first, position[3].second, low_z, MovementPriority::MOVEMENT_COMBAT);
             }
         }
     }
@@ -134,5 +156,9 @@ bool ThaddiusMovePolarityAction::Execute(Event /*event*/)
         idx = 2;
     }
     idx = idx * 2 + botAI->IsRanged(bot);
-    return MoveTo(bot->GetMapId(), position[idx].first, position[idx].second, bot->GetPositionZ(), false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+    if (bot->GetDistance2d(position[idx].first, position[idx].second) <= 1.5f)
+        return false;
+
+    return MoveTo(bot->GetMapId(), position[idx].first, position[idx].second, bot->GetPositionZ(), false, false, false, false,
+                  MovementPriority::MOVEMENT_COMBAT);
 }
